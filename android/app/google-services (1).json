@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "722133009908",
+    "project_id": "menuvista-cebae",
+    "storage_bucket": "menuvista-cebae.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:722133009908:android:c15d8b1c5ffaafcff5e5a1",
+        "android_client_info": {
+          "package_name": "com.example.menu_vista"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4ZezMJKAHOUbb2__IBdEyWRhPaYc_UgI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
