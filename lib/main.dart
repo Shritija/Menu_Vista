@@ -39,7 +39,6 @@ class MenuVistaApp extends StatelessWidget {
     );
   }
 }
-
 class LoginPage extends StatefulWidget {
   @override
   _LoginPageState createState() => _LoginPageState();
@@ -60,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
           // Fixed Background Image
           Positioned.fill(
             child: Image.asset(
-              'assets/images/loginpage2.png',
+              'assets/images/loginpage3.png',
               fit: BoxFit.cover,
             ),
           ),
@@ -74,7 +73,12 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    SizedBox(height: 150),
+                    // Adding the logo at the top
+                    Image.asset(
+                      'assets/images/logo2.png', // Replace with your logo file path
+                      height: 250, // Adjust the size of the logo
+                      width: 250,
+                    ), // Adding some space after the logo
                     TextField(
                       controller: emailController,
                       decoration: InputDecoration(
@@ -351,6 +355,8 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+
+
 
 
 class LoadingPage extends StatelessWidget {

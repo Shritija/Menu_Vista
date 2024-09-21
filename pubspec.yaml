@@ -65,6 +65,9 @@ flutter:
     - assets/images/Google-Symbol.png
     - assets/images/login_image.png
     - assets/images/loginpage2.png
+    - assets/images/loginpage3.png
+    - assets/images/logo.png
+    - assets/images/logo2.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
