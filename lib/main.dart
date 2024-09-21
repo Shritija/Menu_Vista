@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Add this import for Firebase Auth
 import 'package:firebase_core/firebase_core.dart';
 import 'package:menu_vista/firebase_options.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -377,24 +378,79 @@ class LoadingPage extends StatelessWidget {
   }
 }
 
-class ForgotPasswordPage extends StatelessWidget {
+class ForgotPasswordPage extends StatefulWidget {
+  @override
+  _ForgotPasswordPageState createState() => _ForgotPasswordPageState();
+}
+
+class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+  final TextEditingController emailController = TextEditingController();
+  String message = '';
+
+  // Function to handle password reset request
+  Future<void> sendPasswordResetEmail() async {
+    String email = emailController.text.trim();
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      setState(() {
+        message = 'Password reset link sent to $email. Please check your inbox.';
+      });
+    } catch (e) {
+      setState(() {
+        message = 'Error occurred: ${e.toString()}';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      
       appBar: AppBar(
-        title: Text(
-          'Forgot Password',
-          style: TextStyle(
-            fontFamily: 'Oswald',
-          ),
-        ),
+        title: Text('Forgot Password', style: TextStyle(fontFamily: 'Oswald', color: Colors.white)),
+        iconTheme: IconThemeData(color: Colors.white),
+        backgroundColor: Color.fromARGB(255, 0, 0, 0),
       ),
-      body: Center(
-        child: Text('Forgot Password Page'),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextField(
+              controller: emailController,
+              decoration: InputDecoration(
+                labelText: 'Enter your email',
+                hintText: 'Email',
+                border: OutlineInputBorder( 
+                  borderSide: BorderSide(
+                    color: const Color.fromARGB(255, 0, 110, 255),
+                    ),
+                  ),
+              ),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: sendPasswordResetEmail,
+              child: Text('Send Password Reset Link', style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color.fromARGB(255, 0, 0, 0),
+                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+              ),
+            ),
+            SizedBox(height: 20),
+            Text(
+              message,
+              style: TextStyle(color: message.contains('Error') ? Colors.red : Colors.green),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
 
 class SignUpPage extends StatelessWidget {
   @override
