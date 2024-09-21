@@ -42,107 +42,127 @@ class _LoginPageState extends State<LoginPage> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background Image
-          Image.asset(
-            'assets/images/login_image.png',
-            fit: BoxFit.cover,
+          // Fixed Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/loginpage2.png',
+              fit: BoxFit.cover,
+            ),
           ),
-          // Foreground with the login form elements
+          // Foreground with the login form elements inside SingleChildScrollView
           Center(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(height: 225),
-                  Text(
-                    'The Vista to your perfect Meal',
-                    style: TextStyle(
-                      fontFamily: 'Inika',
-                      fontSize: 24,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-
-                  // Email TextField
-                  TextField(
-                    controller: emailController,
-                    decoration: InputDecoration(
-                      hintText: 'Email',
-                      hintStyle: TextStyle(
+              child: Padding(
+                padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(height: 150),
+                    TextField(
+                      controller: emailController,
+                      decoration: InputDecoration(
+                        hintText: 'Email',
+                        hintStyle: TextStyle(
+                          fontFamily: 'Oswald',
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                        filled: true,
+                        fillColor: Color(0xFFD9D9D9),
+                        prefixIcon: Icon(Icons.email, color: Colors.black),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      style: TextStyle(
                         fontFamily: 'Oswald',
                         color: Colors.black,
-                        fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
-                      filled: true,
-                      fillColor: Color(0xFFD9D9D9),
-                      prefixIcon: Icon(Icons.email, color: Colors.black),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                        borderSide: BorderSide.none,
-                      ),
                     ),
-                    style: TextStyle(
-                      fontFamily: 'Oswald',
-                      color: Colors.black,
-                      fontSize: 18,
-                    ),
-                  ),
-                  SizedBox(height: 20),
+                    SizedBox(height: 20),
 
-                  // Password TextField
-                  TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      hintText: 'Password',
-                      hintStyle: TextStyle(
+                    // Password TextField
+                    TextField(
+                      controller: passwordController,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        hintText: 'Password',
+                        hintStyle: TextStyle(
+                          fontFamily: 'Oswald',
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                        filled: true,
+                        fillColor: Color(0xFFD9D9D9),
+                        prefixIcon: Icon(Icons.lock, color: Colors.black),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      style: TextStyle(
                         fontFamily: 'Oswald',
                         color: Colors.black,
-                        fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
-                      filled: true,
-                      fillColor: Color(0xFFD9D9D9),
-                      prefixIcon: Icon(Icons.lock, color: Colors.black),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                        borderSide: BorderSide.none,
-                      ),
                     ),
-                    style: TextStyle(
-                      fontFamily: 'Oswald',
-                      color: Colors.black,
-                      fontSize: 18,
-                    ),
-                  ),
-                  SizedBox(height: 20),
+                    SizedBox(height: 20),
 
-                  // Remember Me & Forgot Password Boxes
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Color(0xFFD9D9D9),
-                            borderRadius: BorderRadius.circular(10.0),
+                    // Remember Me & Forgot Password Boxes
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Color(0xFFD9D9D9),
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            child: Row(
+                              children: [
+                                Switch(
+                                  value: rememberMe,
+                                  onChanged: (val) {
+                                    setState(() {
+                                      rememberMe = val;
+                                    });
+                                  },
+                                  activeColor: Colors.black,
+                                ),
+                                Text(
+                                  'Remember Me',
+                                  style: TextStyle(
+                                    fontFamily: 'Oswald',
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            padding: EdgeInsets.all(8.0),
                           ),
-                          child: Row(
-                            children: [
-                              Switch(
-                                value: rememberMe,
-                                onChanged: (val) {
-                                  setState(() {
-                                    rememberMe = val;
-                                  });
-                                },
-                                activeColor: Colors.black,
-                              ),
-                              Text(
-                                'Remember Me',
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Color(0xFFD9D9D9),
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                    context, '/forgot_password');
+                              },
+                              child: Text(
+                                'Forgot Password?',
                                 style: TextStyle(
                                   fontFamily: 'Oswald',
                                   color: Colors.black,
@@ -150,177 +170,164 @@ class _LoginPageState extends State<LoginPage> {
                                   fontSize: 15,
                                 ),
                               ),
-                            ],
-                          ),
-                          padding: EdgeInsets.all(8.0),
-                        ),
-                      ),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Color(0xFFD9D9D9),
-                            borderRadius: BorderRadius.circular(10.0),
-                          ),
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/forgot_password');
-                            },
-                            child: Text(
-                              'Forgot Password?',
-                              style: TextStyle(
-                                fontFamily: 'Oswald',
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
                             ),
+                            padding: EdgeInsets.all(8.0),
                           ),
-                          padding: EdgeInsets.all(8.0),
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
+                      ],
+                    ),
+                    SizedBox(height: 20),
 
-                  // Login Button
-                  ElevatedButton(
-                    onPressed: () async {
-                      String email = emailController.text;
-                      String password = passwordController.text;
+                    // Updated Login Button with enhanced error handling
+                    ElevatedButton(
+                      onPressed: () async {
+                        String email = emailController.text;
+                        String password = passwordController.text;
 
-                      try {
-                        // Sign in with Firebase Auth
-                        UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-                          email: email,
-                          password: password,
-                        );
+                        try {
+                          // Sign in with Firebase Auth
+                          UserCredential userCredential = await FirebaseAuth
+                              .instance
+                              .signInWithEmailAndPassword(
+                            email: email,
+                            password: password,
+                          );
 
-                        // If sign-in succeeds, navigate to the LoadingPage
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => LoadingPage()),
-                        );
-                      } on FirebaseAuthException catch (e) {
-                        if (e.code == 'user-not-found') {
+                          // Clear the error message upon successful login
                           setState(() {
-                            errorMessage = 'No user found for that email.';
+                            errorMessage = '';
                           });
-                        } else if (e.code == 'wrong-password') {
+
+                          // Navigate to the LoadingPage
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => LoadingPage()),
+                          );
+                        } on FirebaseAuthException catch (e) {
+                          if (e.code == 'user-not-found') {
+                            setState(() {
+                              errorMessage = 'No user found for that email.';
+                            });
+                          } else if (e.code == 'wrong-password') {
+                            setState(() {
+                              errorMessage = 'Wrong password provided.';
+                            });
+                          } else {
+                            setState(() {
+                              errorMessage =
+                              'Something went wrong: ${e.message}';
+                            });
+                          }
+                        } catch (e) {
                           setState(() {
-                            errorMessage = 'Wrong password provided.';
-                          });
-                        } else {
-                          setState(() {
-                            errorMessage = 'Something went wrong: ${e.message}';
+                            errorMessage =
+                            'An unexpected error occurred: ${e.toString()}';
                           });
                         }
-                      } catch (e) {
-                        setState(() {
-                          errorMessage = 'An unexpected error occurred: ${e.toString()}';
-                        });
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFFFDE59),
-                      padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFFFDE59),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 50, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      'Log In',
-                      style: TextStyle(
-                        fontFamily: 'Oswald',
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-
-                  // Error message display
-                  if (errorMessage.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Text(
-                        errorMessage,
+                        'Log In',
                         style: TextStyle(
-                          color: Colors.redAccent,
+                          fontFamily: 'Oswald',
+                          color: Colors.white,
+                          fontSize: 26,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
+                    SizedBox(height: 10),
 
-                  // "Or Sign in with" Text
-                  Text(
-                    'Or Sign in with',
-                    style: TextStyle(
-                      fontFamily: 'Oswald',
-                      color: Colors.white70,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                  SizedBox(height: 5),
-
-                  // Google Sign In Button with rounded logo and text below
-                  Column(
-                    children: [
-                      ClipOval(
-                        child: Image.asset(
-                          'assets/images/Google-Symbol.png',
-                          height: 60, // Increased size
-                          width: 60,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'GOOGLE',
-                        style: TextStyle(
-                          fontFamily: 'Oswald',
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 5),
-
-                  // Sign up text with underline
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Do Not have an Account?',
-                        style: TextStyle(
-                          fontFamily: 'Oswald',
-                          color: Colors.white70,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/signup');
-                        },
+                    // Error message display
+                    if (errorMessage.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Text(
-                          'Sign up',
+                          errorMessage,
                           style: TextStyle(
-                            fontFamily: 'Oswald',
                             color: Colors.redAccent,
                             fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            decoration: TextDecoration.underline,
-                            decorationColor: Colors.red,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ],
+
+                    // "Or Sign in with" Text
+                    Text(
+                      'Or Sign in with',
+                      style: TextStyle(
+                        fontFamily: 'Oswald',
+                        color: Colors.white70,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    SizedBox(height: 5),
+
+                    // Google Sign In Button with rounded logo and text below
+                    Column(
+                      children: [
+                        ClipOval(
+                          child: Image.asset(
+                            'assets/images/Google-Symbol.png',
+                            height: 60, // Increased size
+                            width: 60,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'GOOGLE',
+                          style: TextStyle(
+                            fontFamily: 'Oswald',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 5),
+
+                    // Sign up text with underline
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Do Not have an Account?',
+                          style: TextStyle(
+                            fontFamily: 'Oswald',
+                            color: Colors.white70,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/signup');
+                          },
+                          child: Text(
+                            'Sign up',
+                            style: TextStyle(
+                              fontFamily: 'Oswald',
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              decoration: TextDecoration.underline,
+                              decorationColor: Colors.red,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -329,6 +336,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+
 
 class LoadingPage extends StatelessWidget {
   @override
