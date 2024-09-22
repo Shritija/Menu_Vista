@@ -1,26 +1,25 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Add this import for Firebase Auth
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:menu_vista/firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if(kIsWeb) {
-      await Firebase.initializeApp(
-      options: const FirebaseOptions
-        ( apiKey: "AIzaSyBFwOrZUiMrCXz6LWQ0wEfmlt8_qWTgtks",
-          appId: "1:722133009908:web:a1f557a260aa0927f5e5a1",
-          messagingSenderId: "722133009908",
-          projectId: "menuvista-cebae",
-          authDomain: "menuvista-cebae.firebaseapp.com",
-          storageBucket: "menuvista-cebae.appspot.com",
-      )
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: "AIzaSyBFwOrZUiMrCXz6LWQ0wEfmlt8_qWTgtks",
+        appId: "1:722133009908:web:a1f557a260aa0927f5e5a1",
+        messagingSenderId: "722133009908",
+        projectId: "menuvista-cebae",
+        authDomain: "menuvista-cebae.firebaseapp.com",
+        storageBucket: "menuvista-cebae.appspot.com",
+      ),
     );
-  }
-  else {
-      await Firebase.initializeApp(
+  } else {
+    await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
   }
@@ -40,6 +39,7 @@ class MenuVistaApp extends StatelessWidget {
     );
   }
 }
+
 class LoginPage extends StatefulWidget {
   @override
   _LoginPageState createState() => _LoginPageState();
@@ -76,10 +76,10 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     // Adding the logo at the top
                     Image.asset(
-                      'assets/images/logo2.png', // Replace with your logo file path
-                      height: 250, // Adjust the size of the logo
-                      width: 250,
-                    ), // Adding some space after the logo
+                      'assets/images/pnglogo.png', // Replace with your logo file path
+                      height: 300,
+                      width: 300,
+                    ),
                     TextField(
                       controller: emailController,
                       decoration: InputDecoration(
@@ -105,8 +105,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     SizedBox(height: 20),
-
-                    // Password TextField
                     TextField(
                       controller: passwordController,
                       obscureText: true,
@@ -133,8 +131,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     SizedBox(height: 20),
-
-                    // Remember Me & Forgot Password Boxes
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -197,15 +193,12 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                     SizedBox(height: 20),
-
-                    // Updated Login Button with enhanced error handling
                     ElevatedButton(
                       onPressed: () async {
                         String email = emailController.text;
                         String password = passwordController.text;
 
                         try {
-                          // Sign in with Firebase Auth
                           UserCredential userCredential = await FirebaseAuth
                               .instance
                               .signInWithEmailAndPassword(
@@ -213,12 +206,10 @@ class _LoginPageState extends State<LoginPage> {
                             password: password,
                           );
 
-                          // Clear the error message upon successful login
                           setState(() {
                             errorMessage = '';
                           });
 
-                          // Navigate to the LoadingPage
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -236,13 +227,13 @@ class _LoginPageState extends State<LoginPage> {
                           } else {
                             setState(() {
                               errorMessage =
-                              'Something went wrong: ${e.message}';
+                                  'Something went wrong: ${e.message}';
                             });
                           }
                         } catch (e) {
                           setState(() {
                             errorMessage =
-                            'An unexpected error occurred: ${e.toString()}';
+                                'An unexpected error occurred: ${e.toString()}';
                           });
                         }
                       },
@@ -265,8 +256,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     SizedBox(height: 10),
-
-                    // Error message display
                     if (errorMessage.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -278,8 +267,6 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-
-                    // "Or Sign in with" Text
                     Text(
                       'Or Sign in with',
                       style: TextStyle(
@@ -290,14 +277,12 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     SizedBox(height: 5),
-
-                    // Google Sign In Button with rounded logo and text below
                     Column(
                       children: [
                         ClipOval(
                           child: Image.asset(
                             'assets/images/Google-Symbol.png',
-                            height: 60, // Increased size
+                            height: 60,
                             width: 60,
                           ),
                         ),
@@ -314,8 +299,6 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                     SizedBox(height: 5),
-
-                    // Sign up text with underline
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -357,9 +340,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-
-
-
 class LoadingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -387,54 +367,110 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final TextEditingController emailController = TextEditingController();
   String message = '';
 
-  // Function to handle password reset request
   Future<void> sendPasswordResetEmail() async {
     String email = emailController.text.trim();
 
     try {
+      // Check if the email is registered
+      List<String> signInMethods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+      print("$email");
+      print("$signInMethods");
+      if (signInMethods.isNotEmpty) {
+        setState(() {
+          message = 'No user found for that email.';
+        });
+        return;
+
+        // ignore: dead_code
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('This email is not registered.'), backgroundColor: Colors.red),
+          );
+          return;
+        }
+
+      // If the email is registered, send the password reset email
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       setState(() {
         message = 'Password reset link sent to $email. Please check your inbox.';
+      });
+      // Show a SnackBar notification for success and navigate back to login page
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Password reset link sent to $email'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Wait for 2 seconds, then pop back to the login page
+      Future.delayed(Duration(seconds: 2), () {
+        Navigator.pop(context);
       });
     } catch (e) {
       setState(() {
         message = 'Error occurred: ${e.toString()}';
       });
+        ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('This email is not registered.'), backgroundColor: Colors.red),
+      );
+      return;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
+      backgroundColor: Color.fromARGB(255, 27, 60, 61),
       appBar: AppBar(
         title: Text('Forgot Password', style: TextStyle(fontFamily: 'Oswald', color: Colors.white)),
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Color.fromARGB(255, 255, 222, 89)),
         backgroundColor: Color.fromARGB(255, 0, 0, 0),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
+            Image.asset(
+              'assets/images/logo.png', // Replace with your logo file path
+              height: 250,
+              width: 250,
+            ),
             TextField(
               controller: emailController,
               decoration: InputDecoration(
                 labelText: 'Enter your email',
+                labelStyle: TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+                floatingLabelStyle: TextStyle(
+                  color: Color.fromARGB(255, 255, 222, 89),
+                  shadows: [
+                    Shadow(
+                      color: Colors.black,
+                      offset: Offset(2.0, 2.0),
+                      blurRadius: 1.0,
+                    )
+                  ],
+                ),
                 hintText: 'Email',
-                border: OutlineInputBorder( 
+                filled: true,
+                fillColor: Color.fromARGB(255, 206, 206, 206),
+                focusedBorder: OutlineInputBorder(
                   borderSide: BorderSide(
-                    color: const Color.fromARGB(255, 0, 110, 255),
-                    ),
+                    color: Color.fromARGB(255, 255, 222, 89),
+                    width: 2.0,
                   ),
+                ),
               ),
             ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: sendPasswordResetEmail,
-              child: Text('Send Password Reset Link', style: TextStyle(color: Colors.white)),
+              child: Text('Send Password Reset Link', style: TextStyle(
+                color: const Color.fromARGB(255, 0, 0, 0),
+                fontFamily: 'Oswald',
+                fontWeight: FontWeight.bold,
+              )),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color.fromARGB(255, 0, 0, 0),
+                backgroundColor: Color.fromARGB(255, 255, 222, 89),
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
               ),
             ),
@@ -450,7 +486,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     );
   }
 }
-
 
 class SignUpPage extends StatelessWidget {
   @override
