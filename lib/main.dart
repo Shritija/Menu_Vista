@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:menu_vista/firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+
+
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -76,7 +81,7 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     // Adding the logo at the top
                     Image.asset(
-                      'assets/images/pnglogo.png', // Replace with your logo file path
+                      'assets/images/unnamed.png', // Replace with your logo file path
                       height: 300,
                       width: 300,
                     ),
@@ -227,13 +232,13 @@ class _LoginPageState extends State<LoginPage> {
                           } else {
                             setState(() {
                               errorMessage =
-                                  'Something went wrong: ${e.message}';
+                              'Something went wrong: ${e.message}';
                             });
                           }
                         } catch (e) {
                           setState(() {
                             errorMessage =
-                                'An unexpected error occurred: ${e.toString()}';
+                            'An unexpected error occurred: ${e.toString()}';
                           });
                         }
                       },
@@ -383,10 +388,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
         // ignore: dead_code
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('This email is not registered.'), backgroundColor: Colors.red),
-          );
-          return;
-        }
+          SnackBar(content: Text('This email is not registered.'), backgroundColor: Colors.red),
+        );
+        return;
+      }
 
       // If the email is registered, send the password reset email
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
@@ -409,7 +414,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       setState(() {
         message = 'Error occurred: ${e.toString()}';
       });
-        ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('This email is not registered.'), backgroundColor: Colors.red),
       );
       return;
@@ -487,7 +492,57 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   }
 }
 
-class SignUpPage extends StatelessWidget {
+class SignUpPage extends StatefulWidget {
+  @override
+  _SignUpPageState createState() => _SignUpPageState();
+}
+
+class _SignUpPageState extends State<SignUpPage> {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  String errorMessage = '';
+
+  Future<void> signUp() async {
+    String name = nameController.text;
+    String email = emailController.text;
+    String password = passwordController.text;
+
+    try {
+      // Create a new user using Firebase Authentication
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
+
+      // Clear any previous error messages
+      setState(() {
+        errorMessage = '';
+      });
+
+      // Navigate back to the login page or main menu after successful sign-up
+      Navigator.pop(context);
+    } on FirebaseAuthException catch (e) {
+      // Handle specific FirebaseAuth errors
+      if (e.code == 'weak-password') {
+        setState(() {
+          errorMessage = 'The password provided is too weak.';
+        });
+      } else if (e.code == 'email-already-in-use') {
+        setState(() {
+          errorMessage = 'The account already exists for that email.';
+        });
+      } else {
+        setState(() {
+          errorMessage = 'Something went wrong: ${e.message}';
+        });
+      }
+    } catch (e) {
+      // Handle other errors
+      setState(() {
+        errorMessage = 'An error occurred: ${e.toString()}';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -496,11 +551,151 @@ class SignUpPage extends StatelessWidget {
           'Sign Up',
           style: TextStyle(
             fontFamily: 'Oswald',
+            color: Colors.white,
+          ),
+        ),
+        iconTheme: IconThemeData(color: Color(0xFFFFDE59)),
+        backgroundColor: Colors.black,
+      ),
+      backgroundColor: Color(0xFF1b3c3d),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              SizedBox(height: 30), // Space between the top and logo
+              Center(
+                child: Image.asset(
+                  'assets/images/logo.png', // Path to your logo image
+                  height: 150, // Image size
+                ),
+              ),
+              SizedBox(height: 30), // Space between the logo and form
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Name Input Field
+                    Text(
+                      'Name',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    TextField(
+                      controller: nameController,
+                      style: TextStyle(color: Colors.black),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Color(0xFFCECECE),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20), // Space between input fields
+
+                    // Email Input Field
+                    Text(
+                      'Email',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    TextField(
+                      controller: emailController,
+                      style: TextStyle(color: Colors.black),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Color(0xFFCECECE),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+
+                    // Password Input Field
+                    Text(
+                      'Password',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    TextField(
+                      controller: passwordController,
+                      obscureText: true,
+                      style: TextStyle(color: Colors.black),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Color(0xFFCECECE),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 30),
+
+                    // Sign Up Button
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: signUp,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFFFFDE59),
+                          foregroundColor: Colors.black,
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text('Create Account'),
+                      ),
+                    ),
+
+                    // Error Message Display
+                    if (errorMessage.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Center(
+                          child: Text(
+                            errorMessage,
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
+    );
+  }
+}
+
+
+class MainMenuPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Main Menu'),
+        backgroundColor: Color(0xFF394548), // Dark AppBar color
+      ),
       body: Center(
-        child: Text('Sign Up Page'),
+        child: Text('Welcome to the Main Menu!'),
       ),
     );
   }
