@@ -7,7 +7,25 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+/*
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+*/
+/*
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
 
+*/
 
 
 void main() async {
@@ -200,48 +218,52 @@ class _LoginPageState extends State<LoginPage> {
                     SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: () async {
-                        String email = emailController.text;
-                        String password = passwordController.text;
+                        String email = emailController.text.trim();
+                        String password = passwordController.text.trim();
 
                         try {
-                          UserCredential userCredential = await FirebaseAuth
-                              .instance
-                              .signInWithEmailAndPassword(
-                            email: email,
-                            password: password,
-                          );
+                          // Query Firestore for the user with the given email
+                          QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+                              .collection('users')
+                              .where('email', isEqualTo: email)
+                              .limit(1)
+                              .get();
 
-                          setState(() {
-                            errorMessage = '';
-                          });
-
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => LoadingPage()),
-                          );
-                        } on FirebaseAuthException catch (e) {
-                          if (e.code == 'user-not-found') {
+                          // Check if user exists
+                          if (querySnapshot.docs.isEmpty) {
                             setState(() {
                               errorMessage = 'No user found for that email.';
                             });
-                          } else if (e.code == 'wrong-password') {
-                            setState(() {
-                              errorMessage = 'Wrong password provided.';
-                            });
                           } else {
-                            setState(() {
-                              errorMessage =
-                              'Something went wrong: ${e.message}';
-                            });
+                            // Retrieve the user's data
+                            var userData = querySnapshot.docs.first.data();
+
+                            // Check if the password matches
+                            if (userData != null && (userData as Map<String, dynamic>)['password'] == password) {
+                                setState(() {
+                                  errorMessage = '';
+                                });
+                                // Navigate to the LoadingPage on successful login
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => LoadingPage()),
+                                );
+                              } else {
+                                setState(() {
+                                  errorMessage = 'Wrong password provided.';
+                                });
+                              }
+
+
                           }
                         } catch (e) {
+                          // Handle any other errors
                           setState(() {
-                            errorMessage =
-                            'An unexpected error occurred: ${e.toString()}';
+                            errorMessage = 'An unexpected error occurred: ${e.toString()}';
                           });
                         }
                       },
+
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFFFFDE59),
                         padding: EdgeInsets.symmetric(
@@ -376,50 +398,56 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     String email = emailController.text.trim();
 
     try {
-      // Check if the email is registered
-      List<String> signInMethods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
-      print("$email");
-      print("$signInMethods");
-      if (signInMethods.isNotEmpty) {
+      // Query Firestore for the user's email
+      var querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
         setState(() {
           message = 'No user found for that email.';
         });
-        return;
-
-        // ignore: dead_code
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('This email is not registered.'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('No user found for that email.'),
+            backgroundColor: Colors.red,
+          ),
         );
-        return;
+      } else {
+        // Use Firebase Authentication to send password reset email
+        await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+        setState(() {
+          message = 'Password reset link sent to $email.';
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Password reset link sent to $email'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Simulate a delay and go back to the login page
+        Future.delayed(Duration(seconds: 2), () {
+          Navigator.pop(context);
+        });
       }
-
-      // If the email is registered, send the password reset email
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      setState(() {
-        message = 'Password reset link sent to $email. Please check your inbox.';
-      });
-      // Show a SnackBar notification for success and navigate back to login page
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Password reset link sent to $email'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // Wait for 2 seconds, then pop back to the login page
-      Future.delayed(Duration(seconds: 2), () {
-        Navigator.pop(context);
-      });
     } catch (e) {
       setState(() {
         message = 'Error occurred: ${e.toString()}';
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('This email is not registered.'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
-      return;
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -504,21 +532,30 @@ class _SignUpPageState extends State<SignUpPage> {
   String errorMessage = '';
 
   Future<void> signUp() async {
-    String name = nameController.text;
-    String email = emailController.text;
-    String password = passwordController.text;
+    String name = nameController.text.trim();
+    String email = emailController.text.trim();
+    String password = passwordController.text.trim();
 
     try {
-      // Create a new user using Firebase Authentication
-      UserCredential userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(email: email, password: password);
+      // Create a new user in Firebase Authentication
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-      // Clear any previous error messages
+      // After creating the user, store additional information in Firestore
+      await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+        'name': name,
+        'email': email,
+        'password': password, // Storing password (not recommended for security)
+      });
+
+      // Clear previous error message
       setState(() {
         errorMessage = '';
       });
 
-      // Navigate back to the login page or main menu after successful sign-up
+      // Navigate back to login or main menu after successful sign-up
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       // Handle specific FirebaseAuth errors
@@ -536,9 +573,9 @@ class _SignUpPageState extends State<SignUpPage> {
         });
       }
     } catch (e) {
-      // Handle other errors
+      // Handle any other unexpected errors
       setState(() {
-        errorMessage = 'An error occurred: ${e.toString()}';
+        errorMessage = 'An unexpected error occurred: ${e.toString()}';
       });
     }
   }
@@ -686,17 +723,3 @@ class _SignUpPageState extends State<SignUpPage> {
 }
 
 
-class MainMenuPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Main Menu'),
-        backgroundColor: Color(0xFF394548), // Dark AppBar color
-      ),
-      body: Center(
-        child: Text('Welcome to the Main Menu!'),
-      ),
-    );
-  }
-}
