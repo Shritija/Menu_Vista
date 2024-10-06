@@ -977,7 +977,7 @@ class _MenuPageState extends State<MenuPage> {
     required num smallPrice,
     required num mediumPrice// Accept small price as a number
   }) {
-    bool isLiked = false; // State for heart icon
+    bool isLiked = false; 
     return Container (
       
       margin: EdgeInsets.only(bottom: 10.0),
