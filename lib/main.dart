@@ -44,7 +44,7 @@ class MenuVistaApp extends StatelessWidget {
         '/forgot_password': (context) => ForgotPasswordPage(),
         '/signup': (context) => SignUpPage(),
         '/restaurant_list': (context) => RestaurantListPage(),
-        '/menu': (context) => MenuPage(),
+        '/menu': (context) => MenuPage( Rid: ModalRoute.of(context)!.settings.arguments as String),
         '/profile': (context) => ProfilePage(),
         '/cart': (context) => ShoppingCartPage(),
       },
@@ -250,14 +250,14 @@ class _LoginPageState extends State<LoginPage> {
                           });
 
                           // Example restaurant ID (replace with your logic)
-                          String restaurantId = 'PR5Gs3rUuEvPK6HvCZcl';
-                          String itemId = '2001';
+                         // String restaurantId = 'PR5Gs3rUuEvPK6HvCZcl';
+                          //String itemId = '2001';
 
                           // Navigate to the RestaurantMenuPage after successful login
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ItemPage(restaurantId: restaurantId, itemId: itemId),
+                              builder: (context) => RestaurantListPage(),
                             ),
                           );
                         } on FirebaseAuthException catch (e) {
@@ -303,37 +303,6 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-                    Text(
-                      'Or Sign in with',
-                      style: TextStyle(
-                        fontFamily: 'Oswald',
-                        color: Colors.white70,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Column(
-                      children: [
-                        ClipOval(
-                          child: Image.asset(
-                            'assets/images/Google-Symbol.png',
-                            height: 60,
-                            width: 60,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'GOOGLE',
-                          style: TextStyle(
-                            fontFamily: 'Oswald',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
                     SizedBox(height: 5),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -376,10 +345,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-
-
-
-
 class RestaurantListPage extends StatefulWidget {
   @override
   _RestaurantListPageState createState() => _RestaurantListPageState();
@@ -388,7 +353,7 @@ class RestaurantListPage extends StatefulWidget {
 class _RestaurantListPageState extends State<RestaurantListPage> {
   List<Map<String, dynamic>> _restaurants = [];
   List<Map<String, dynamic>> _favorites = [];
-  List<Map<String, dynamic>> _originalRestaurants = []; // List to store original order
+  List<Map<String, dynamic>> _originalRestaurants = [];
   bool _isLoading = false;
   String _searchQuery = '';
   bool _searchPerformed = false;
@@ -409,6 +374,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
 
       List<Map<String, dynamic>> restaurants = snapshot.docs.map((doc) {
         return {
+          'Rid': doc['Rid'], // Adding Rid
           'name': doc['Rname'],
           'address': doc['address'],
           'isFavorite': false, // Initially, no restaurant is favorited
@@ -548,7 +514,15 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                   children: _restaurants.map((restaurant) {
                     return GestureDetector(
                       onTap: () {
-                        // Navigate to restaurant page
+                        // Navigate to MenuPage with Rid
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MenuPage(
+                              Rid: restaurant['Rid'], // Passing Rid to MenuPage
+                            ),
+                          ),
+                        );
                       },
                       child: Container(
                         padding: EdgeInsets.all(16.0),
@@ -591,7 +565,9 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                             IconButton(
                               icon: Icon(
                                 Icons.star,
-                                color: restaurant['isFavorite'] ? Colors.yellow : Colors.grey,
+                                color: restaurant['isFavorite']
+                                    ? Colors.yellow
+                                    : Colors.grey,
                               ),
                               onPressed: () {
                                 toggleFavorite(restaurant); // Toggle favorite state
@@ -608,7 +584,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
           ],
         ),
       ),
-      bottomNavigationBar: Container (
+      bottomNavigationBar: Container(
         color: Color(0xFF1B3C3D),
         height: 50,
         child: Row(
@@ -678,15 +654,15 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                     ),
                   ],
                 ),
-                child: IconButton(
-                  iconSize: 20.0, // Same smaller icon size
-                  icon: Image.asset(
-                    'assets/images/bottommenuicon.png', // Add your image path here
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/menu');
-                  },
-                ),
+                //child: IconButton (
+                 // iconSize: 20.0, // Same smaller icon size
+                  //icon: Image.asset(
+                  //  'assets/images/bottommenuicon.png', // Add your image path here
+                  //),
+                 // onPressed: () {
+
+                 // },
+              //  ),
               ),
             ),
           ],
@@ -695,9 +671,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     );
   }
 }
-
-
-
 
 
 class UnderConstructionPage extends StatelessWidget {
@@ -721,24 +694,87 @@ class UnderConstructionPage extends StatelessWidget {
     );
   }
 }
-
 class MenuPage extends StatefulWidget {
+  final String Rid;
+
+  MenuPage({required this.Rid});
+
   @override
   _MenuPageState createState() => _MenuPageState();
 }
 
 class _MenuPageState extends State<MenuPage> {
-  bool isVeg = true; // For Veg/Non-Veg toggle
-  bool isLiked = false; // For the heart (like/unlike) functionality
-  String vegStatus = 'Veg'; // Veg/Non-Veg status
-  String itemId ='2001';
-  String restaurantId ='PR5Gs3rUuEvPK6HvCZcl';
+  bool isVeg = true;
+  bool isLiked=true;
+  String vegStatus = 'Veg';
+  String selectedMealType = '';
   Map<String, bool> mealSelections = {
     'Breakfast': false,
     'Lunch': false,
     'Snacks': false,
     'Dinner': false,
   };
+  Map<String, List<Map<String, dynamic>>> menuData = {};
+
+  @override
+  void initState() {
+    super.initState();
+    fetchMenuData();
+  }
+
+  Future<void> fetchMenuData() async {
+    try {
+      final restaurantQuery = await FirebaseFirestore.instance
+          .collection('restaurant')
+          .where('Rid', isEqualTo: widget.Rid)
+          .get();
+      print('Fetching restaurant with Rid: ${widget.Rid}');
+      if (restaurantQuery.docs.isNotEmpty) {
+        final restaurantDoc = restaurantQuery.docs.first;
+
+        final mealTypesRef = restaurantDoc.reference.collection('menuItems').doc('MealTypes');
+
+        final mealTypes = ['breakfast', 'lunch', 'snacks', 'dinner'];
+
+        for (var mealType in mealTypes) {
+          try {
+            final mealCollectionSnapshot = await mealTypesRef.collection(mealType).get();
+            if (mealCollectionSnapshot.docs.isNotEmpty) {
+              setState(() {
+                mealSelections[capitalize(mealType)] = true;
+                menuData[capitalize(mealType)] = mealCollectionSnapshot.docs
+                    .map((doc) => {
+                  'itemname': doc['itemname'],
+                  'itemimage': doc['itemimage'],
+                  'description': doc['description'],
+                  'isveg': doc['isveg'],
+                  'small': doc['small'],
+                  'medium': doc['medium']// Small price as number
+                })
+                    .where((item) => isVeg ? item['isveg'] == true : item['isveg'] == false)
+                    .toList();
+              });
+            } else {
+              setState(() {
+                mealSelections[capitalize(mealType)] = false;
+              });
+            }
+          } catch (e) {
+            print('Error fetching $mealType collection: $e');
+            setState(() {
+              mealSelections[capitalize(mealType)] = false;
+            });
+          }
+        }
+      } else {
+        print('No document found with Rid: ${widget.Rid}');
+      }
+    } catch (e) {
+      print('Error fetching menu data: $e');
+    }
+  }
+
+  String capitalize(String s) => s[0].toUpperCase() + s.substring(1);
 
   @override
   Widget build(BuildContext context) {
@@ -761,7 +797,7 @@ class _MenuPageState extends State<MenuPage> {
         title: Center(
           child: Image.asset(
             'assets/images/MenuVistaicon.png',
-            height: 50,
+            height: 100,
             width: 200,
           ),
         ),
@@ -799,219 +835,51 @@ class _MenuPageState extends State<MenuPage> {
                   ),
                 ),
               ),
-
               SizedBox(height: 10),
 
               // Meal category buttons
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildMealButton('Breakfast'),
-                  _buildMealButton('Lunch'),
-                  _buildMealButton('Snacks'),
-                  _buildMealButton('Dinner'),
-                ],
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: mealSelections.entries
+                    .where((entry) => entry.value)
+                    .map((entry) => _buildMealButton(entry.key))
+                    .toList(),
               ),
-
               SizedBox(height: 10),
 
               // Veg/Non-Veg Toggle
-              Column(
+              Row (
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start, // Aligns content inside the column to the left
-                      children: [
-                        Text(
-                          'Veg/Non-Veg',
-                          style: TextStyle(
-                            fontFamily: 'Oswald',
-                            fontSize: 16,
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        // Wrap the Switch in a Container to add a border
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.black), // Black border
-                            borderRadius: BorderRadius.circular(20), // Optional: Add rounded corners
-                          ),
-                          child: Switch(
-                            value: isVeg,
-                            onChanged: (value) {
-                              setState(() {
-                                isVeg = value;
-                                vegStatus = isVeg ? 'Veg' : 'Non-Veg';
-                              });
-                            },
-                            activeColor: Colors.green,
-                            inactiveThumbColor: Colors.red[300],
-                            inactiveTrackColor: Colors.red,
-                          ),
-                        ),
-                      ],
+                  Text(
+                    'Veg/Non-Veg',
+                    style: TextStyle(
+                      fontFamily: 'Oswald',
+                      fontSize: 12,
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
                     ),
-                  )
+                  ),
 
-
+                  Switch(
+                    value: isVeg,
+                    onChanged: (value) {
+                      setState(() {
+                        isVeg = value;
+                        vegStatus = isVeg ? 'Veg' : 'Non-Veg';
+                        fetchMenuData(); // Fetch data again based on new selection
+                      });
+                    },
+                    activeColor: Colors.green,
+                    inactiveThumbColor: Colors.red[300],
+                    inactiveTrackColor: Colors.red,
+                  ),
                 ],
               ),
-
               SizedBox(height: 10),
 
-              // Food item button (Fries)
-              Container (
-                padding: EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  color: Color(0xFFFFDE59),
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 5.0,
-                      spreadRadius: 2.0,
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  children: [
-                    // Positioned for the heart icon at the top-right corner
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: IconButton(
-                        iconSize: 30.0,
-                        icon: Icon(
-                          isLiked ? Icons.favorite : Icons.favorite,
-                          color: isLiked ? Colors.blueGrey : Color(0xFF1B3C3D),
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            isLiked = !isLiked;
-                          });
-                        },
-                      ),
-                    ),
-                    // Content of the item (fries image, text, price, size buttons, etc.)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(width: 0),
-                        // Image on the left inside rounded rectangle
-                        Column(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(25),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: Colors.black, width: 0),
-                                ),
-                                child: Image.asset(
-                                  'assets/images/fries.png', // Replace this with your actual image path
-                                  height: 130, // Adjusted height for larger image
-                                  width: 100, // Adjusted width for larger image
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(width: 5),
-                        
-                        // Text details
-                        Expanded (
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Title inside a rectangle
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ItemPage(restaurantId: restaurantId, itemId: itemId),
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  
-                                  padding: EdgeInsets.all(8.0),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    'Peri Peri Fries',
-                                    style: TextStyle(
-                                      fontFamily: 'Oswald',
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                               const SizedBox(width: 5),
-                                Text(
-                                  'Crunchy Fries topped with tangy tomato sauce',
-                                  style: TextStyle(
-                                    fontFamily: 'Oswald',
-                                    fontSize: 12,
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(height: 10),
-
-                                // Size selection buttons and price
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        _buildSizeButton('Medium'),
-                                        SizedBox(width: 5),
-                                        _buildSizeButton('Small'),
-                                        SizedBox(width: 5),
-                                        _buildSizeButton('Large'),
-                                      ],
-                                    ),
-                                    // Price inside rounded rectangle
-                                    Container(
-                                      padding: EdgeInsets.symmetric(vertical:5, horizontal: 10),
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFF1B3C3D),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min, // Make the row take only the necessary space
-                                        children: [
-                                          Text(
-                                            'Rs 120',
-                                            style: TextStyle(
-                                              fontFamily: 'Oswald',
-                                              fontSize:8,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                               ),
-                            
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              // Display selected meal type items
+              ..._buildMealItems(selectedMealType),
             ],
           ),
         ),
@@ -1022,7 +890,6 @@ class _MenuPageState extends State<MenuPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            // Profile Button
             Flexible(
               child: IconButton(
                 iconSize: 20.0,
@@ -1034,7 +901,6 @@ class _MenuPageState extends State<MenuPage> {
                 },
               ),
             ),
-            // Shopping Cart Button
             Flexible(
               child: IconButton(
                 iconSize: 20.0,
@@ -1046,79 +912,177 @@ class _MenuPageState extends State<MenuPage> {
                 },
               ),
             ),
-            // Menu Button
-            Flexible(
-              child: IconButton(
-                iconSize: 20.0,
-                icon: Image.asset(
-                  'assets/images/bottommenuicon.png',
-                ),
-                onPressed: () {
-                  Navigator.pushNamed(context, '/menu');
-                },
-              ),
-            ),
+            //Flexible(
+              //child: IconButton(
+                //iconSize: 20.0,
+                //icon: Image.asset(
+                  //'assets/images/bottommenuicon.png',
+                //),
+               // onPressed: () {
+                 // Navigator.pushNamed(context, '/menu');
+               // },
+             // ),
+            //),
           ],
         ),
       ),
     );
   }
 
-  // Widget for building meal category buttons with toggle effect
   Widget _buildMealButton(String mealType) {
-    bool isSelected = mealSelections[mealType] ?? false;
+    bool isSelected = selectedMealType == mealType;
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: isSelected ? Color(0xFF3CC2C6) : Color(0xFF1B3C3D),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0), // Adjust padding here
-        minimumSize: Size(50,50), // Set minimum size for width and height
+        padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        minimumSize: Size(20,40),
       ),
       onPressed: () {
         setState(() {
-          // Toggle selection state
-          mealSelections.forEach((key, value) {
-            mealSelections[key] = false; // Reset others
-          });
-          mealSelections[mealType] = !isSelected; // Toggle current
+          selectedMealType = mealType;
         });
       },
       child: Text(
         mealType,
         style: TextStyle(
-          color: Colors.white, // White text
-          fontSize: 14, // You can adjust font size if needed
+          color: Colors.white,
+          fontSize: 14,
         ),
       ),
     );
   }
 
+  List<Widget> _buildMealItems(String mealType) {
+    if (mealType.isEmpty || !menuData.containsKey(mealType)) {
+      return [];
+    }
 
-  // Widget for size buttons (Medium, Small, Large) filled with color 1B3C3D
+    final items = menuData[mealType] ?? [];
+    return items.map((item) {
+      return _buildMenuItem(
+        imageUrl: item['itemimage'],
+        name: item['itemname'],
+        description: item['description'],
+        smallPrice: item['small'],
+        mediumPrice: item['medium']// Fetch small price as a number
+      );
+    }).toList();
+  }
+
+  Widget _buildMenuItem({
+    required String imageUrl,
+    required String name,
+    required String description,
+    required num smallPrice,
+    required num mediumPrice// Accept small price as a number
+  }) {
+    bool isLiked = false; // State for heart icon
+    return Container (
+      
+      margin: EdgeInsets.only(bottom: 10.0),
+      padding: EdgeInsets.all(8.0),
+      width: 500,
+      height: 125,
+      decoration: BoxDecoration(
+        color: Color(0xFFFFDE59),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5.0, spreadRadius: 2.0)],
+      ),
+      child: Stack(
+          children: [
+      Row (
+      children: [
+      //ClipRRect(
+     // borderRadius: BorderRadius.circular(15),
+     // child: Image.network(imageUrl, height:5, width:5, fit: BoxFit.cover),
+    //),
+          SizedBox(
+            height: 100, // Adjust the height
+            width: 50,  // Adjust the width
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.cover, // This will ensure the image fills the available space
+              ),
+            ),
+          ),
+      SizedBox(width: 5),
+        Expanded(
+        child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+        Text(name, style: TextStyle(fontFamily: 'Oswald', fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(description, style: TextStyle(fontSize: 12)),
+        SizedBox(height: 10),
+        Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+        Row(
+        children: [
+        _buildSizeButton('Small'), // Pass small price
+        SizedBox(width: 1),
+        _buildSizeButton('Medium'), // Implement similar for Medium
+        SizedBox(width: 1),
+        _buildSizeButton('Large'),// Implement similar for Large
+                  ],
+        ),
+        // Display small price at the bottom right
+        Container(
+        padding: EdgeInsets.symmetric(vertical:8, horizontal: 8),
+        decoration: BoxDecoration(
+        color: Color(0xFF1B3C3D),
+        borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+        mainAxisSize: MainAxisSize.min, // Make the row take only the necessary space
+        children: [
+        Text(
+        'Rs $smallPrice',
+        style: TextStyle(
+        fontFamily: 'Oswald',
+        fontSize: 10,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+        ),
+        ),
+        ],
+        ),
+        ),
+        ],
+        ),
+        ],
+        ),
+        ),
+    ],
+    ),
+    // Positioned for the heart icon at the top-right corner
+    ],
+    ),
+    );
+  }
   Widget _buildSizeButton(String size) {
     return OutlinedButton(
       style: OutlinedButton.styleFrom(
         backgroundColor: Color(0xFF1B3C3D),
+        padding: EdgeInsets.symmetric(vertical:5, horizontal:5), // Adjust padding for smaller button
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
+          // Modify the size here
         ),
-        side: BorderSide(color: Color(0xFF1B3C3D)),
-        padding: EdgeInsets.symmetric(vertical:5, horizontal:10), // Adjust padding here
-        minimumSize: Size(2,2), // Set minimum size for width and height
+        minimumSize: Size(50,25), // Set a smaller minimum size
       ),
       onPressed: () {
-        // Size selection action
+        // Action for button press
       },
       child: Text(
-        size,
-        style: TextStyle(
-          color: Colors.white, // White text
-          fontSize: 8,
-          fontWeight: FontWeight.bold, // You can adjust font size if needed
-        ),
+        '$size',
+        style: TextStyle(color: Colors.white, fontSize: 8),
       ),
     );
   }
+
 }
 
 
