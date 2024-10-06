@@ -6,6 +6,7 @@ import 'package:menu_vista/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 /*
 service cloud.firestore {
@@ -222,39 +223,37 @@ class _LoginPageState extends State<LoginPage> {
                         String password = passwordController.text.trim();
 
                         try {
-                          // Query Firestore for the user with the given email
-                          QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-                              .collection('users')
-                              .where('email', isEqualTo: email)
-                              .limit(1)
-                              .get();
+                          // Sign in with Firebase Authentication
+                          UserCredential userCredential = await FirebaseAuth.instance
+                              .signInWithEmailAndPassword(email: email, password: password);
 
-                          // Check if user exists
-                          if (querySnapshot.docs.isEmpty) {
+                          setState(() {
+                            errorMessage = '';
+                          });
+
+                          // Example restaurant ID (replace with your logic)
+                          String restaurantId = 'PR5Gs3rUuEvPK6HvCZcl';
+
+                          // Navigate to the RestaurantMenuPage after successful login
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => RestaurantMenuPage(restaurantId: restaurantId),
+                            ),
+                          );
+                        } on FirebaseAuthException catch (e) {
+                          if (e.code == 'user-not-found') {
                             setState(() {
                               errorMessage = 'No user found for that email.';
                             });
+                          } else if (e.code == 'wrong-password') {
+                            setState(() {
+                              errorMessage = 'Wrong password provided.';
+                            });
                           } else {
-                            // Retrieve the user's data
-                            var userData = querySnapshot.docs.first.data();
-
-                            // Check if the password matches
-                            if (userData != null && (userData as Map<String, dynamic>)['password'] == password) {
-                                setState(() {
-                                  errorMessage = '';
-                                });
-                                // Navigate to the LoadingPage on successful login
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => LoadingPage()),
-                                );
-                              } else {
-                                setState(() {
-                                  errorMessage = 'Wrong password provided.';
-                                });
-                              }
-
-
+                            setState(() {
+                              errorMessage = 'An unexpected error occurred: ${e.message}';
+                            });
                           }
                         } catch (e) {
                           // Handle any other errors
@@ -366,6 +365,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+
 
 class LoadingPage extends StatelessWidget {
   @override
@@ -547,7 +547,6 @@ class _SignUpPageState extends State<SignUpPage> {
       await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
         'name': name,
         'email': email,
-        'password': password, // Storing password (not recommended for security)
       });
 
       // Clear previous error message
@@ -723,3 +722,414 @@ class _SignUpPageState extends State<SignUpPage> {
 }
 
 
+class RestaurantMenuPage extends StatelessWidget {
+  final String restaurantId;
+
+  RestaurantMenuPage({required this.restaurantId});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Menu'),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('restaurant')
+            .doc(restaurantId)
+            .collection('menuItems')
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          final menuItems = snapshot.data!.docs;
+
+          return ListView.builder(
+            itemCount: menuItems.length,
+            itemBuilder: (context, index) {
+              final item = menuItems[index];
+
+              return ListTile(
+                title: Text(item['name']),
+                subtitle: Text('Rs ${item['mediumPrice']}'),
+                leading: Image.network(item['imageUrl']),
+                onTap: () {
+                  String itemId ='t2PnlkfFIP8c2K2PSw1F';
+                  Navigator.push(
+                    context,
+                    /*MaterialPageRoute(
+                      builder: (context) => ItemDetailPage(itemId: itemId),
+                    ),*/
+                    MaterialPageRoute(
+                      builder: (context) => ItemPage(
+                        restaurantId: restaurantId,
+                        itemId: itemId,
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+class ItemPage extends StatefulWidget {
+  final String restaurantId;
+  final String itemId;
+
+  ItemPage({required this.restaurantId, required this.itemId});
+
+  @override
+  _ItemPageState createState() => _ItemPageState();
+}
+
+class _ItemPageState extends State<ItemPage> {
+  Map<String, dynamic>? itemData; // To store fetched item details
+  String selectedSize = 'Medium';
+  int price = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchItemDetails();
+  }
+
+  // Fetch item details from Firestore
+  void _fetchItemDetails() async {
+    DocumentSnapshot snapshot = await FirebaseFirestore.instance
+        .collection('restaurant')
+        .doc(widget.restaurantId)
+        .collection('menuItems')
+        .doc(widget.itemId)
+        .get();
+
+    if (snapshot.exists) {
+      setState(() {
+        itemData = snapshot.data() as Map<String, dynamic>;
+        price = itemData!['mediumPrice']; // Set initial price to medium
+      });
+    }
+  }
+
+  // Update price based on selected size
+  void _updatePrice(String size) {
+    setState(() {
+      selectedSize = size;
+      if (size == 'Small') {
+        price = itemData!['smallPrice'];
+      } else if (size == 'Medium') {
+        price = itemData!['mediumPrice'];
+      } else if (size == 'Large') {
+        price = itemData!['largePrice'];
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (itemData == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Loading...'),
+        ),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(itemData!['name']),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Item image
+            Center(
+              child: Image.network(itemData!['imageUrl'], height: 200),
+            ),
+            SizedBox(height: 10),
+
+            // Item description
+            Text(
+              itemData!['description'],
+              style: TextStyle(fontSize: 18),
+            ),
+            SizedBox(height: 10),
+
+            // Ingredients
+            // Ingredients
+            Text('Ingredients:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              itemData?['ingredients'] != null && itemData!['ingredients'] is List
+                  ? itemData!['ingredients'].join(', ')
+                  : 'No ingredients available',
+            ),
+
+
+            SizedBox(height: 20),
+
+            // Size selection and price update
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _sizeOption('Small', itemData!),
+                _sizeOption('Medium', itemData!),
+                _sizeOption('Large', itemData!),
+              ],
+            ),
+            SizedBox(height: 10),
+            Center(
+              child: Text(
+                'Price: Rs $price',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+            ),
+
+            // Add to Cart Button
+            SizedBox(height: 10),
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  // Add item to cart logic here
+                },
+                child: Text('Add to Cart'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+              ),
+            ),
+
+            // Review and Rating Button
+            SizedBox(height: 10),
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  String itemId ='t2PnlkfFIP8c2K2PSw1F';
+                  String restaurantId = 'PR5Gs3rUuEvPK6HvCZcl';
+                  Navigator.push(
+                    context,
+                    /*MaterialPageRoute(
+                      builder: (context) => ItemDetailPage(itemId: itemId),
+                    ),*/
+                    MaterialPageRoute(
+                      builder: (context) => ReviewPage(restaurantId: restaurantId, itemId: itemId),
+                    ),
+                  );
+                },
+                child: Text('Rating and Reviews'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
+              ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.teal,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(icon: Icon(Icons.account_circle, color: Colors.white), onPressed: () {}),
+              IconButton(icon: Icon(Icons.shopping_cart, color: Colors.white), onPressed: () {}),
+              IconButton(icon: Icon(Icons.menu, color: Colors.white), onPressed: () {}),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Widget to display the size options
+  Widget _sizeOption(String size, Map<String, dynamic> item) {
+    return GestureDetector(
+      onTap: () {
+        _updatePrice(size);
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        margin: EdgeInsets.only(right: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(5),
+          color: selectedSize == size ? Colors.teal : Colors.grey.shade300,
+        ),
+        child: Text(
+          size,
+          style: TextStyle(color: selectedSize == size ? Colors.white : Colors.black),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
+class ReviewPage extends StatefulWidget {
+  final String restaurantId;
+  final String itemId;
+
+  ReviewPage({required this.restaurantId, required this.itemId});
+
+  @override
+  _ReviewPageState createState() => _ReviewPageState();
+}
+
+class _ReviewPageState extends State<ReviewPage> {
+  String selectedSize = 'Medium';
+  String reviewText = '';
+  int rating = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Item Details'),
+      ),
+      body: FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance
+            .collection('restaurant')
+            .doc(widget.restaurantId)
+            .collection('menuItems')
+            .doc(widget.itemId)
+            .get(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.data!.exists) {
+            return Center(child: Text('Item not found.'));
+          }
+
+          var item = snapshot.data!.data() as Map<String, dynamic>?;
+
+          if (item == null) {
+            return Center(child: Text('No data available for this item.'));
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Image.network(item['imageUrl']),
+                SizedBox(height: 16),
+                Text(item['name'], style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                Text(item['description'], style: TextStyle(fontSize: 16)),
+                SizedBox(height: 16),
+                Text('Customer Reviews', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                _buildReviewsList(),
+                SizedBox(height: 16),
+                Text('Add Your Review', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                TextField(
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Write a review',
+                  ),
+                  onChanged: (text) {
+                    setState(() {
+                      reviewText = text;
+                    });
+                  },
+                ),
+                SizedBox(height: 8),
+                _buildRatingBar(),
+                SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: _submitReview,
+                  child: Text('Submit Review'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildReviewsList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('restaurant')
+          .doc(widget.restaurantId)
+          .collection('menuItems')
+          .doc(widget.itemId)
+          .collection('reviews')
+          .orderBy('timestamp', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        var reviews = snapshot.data!.docs;
+
+        if (reviews.isEmpty) {
+          return Text('No reviews yet');
+        }
+
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          itemCount: reviews.length,
+          itemBuilder: (context, index) {
+            var review = reviews[index].data() as Map<String, dynamic>;
+            return ListTile(
+              title: Text('Rating: ${review['rating']}'),
+              subtitle: Text(review['review']),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildRatingBar() {
+    return Row(
+      children: List.generate(5, (index) {
+        return IconButton(
+          icon: Icon(
+            index < rating ? Icons.star : Icons.star_border,
+            color: Colors.amber,
+          ),
+          onPressed: () {
+            setState(() {
+              rating = index + 1;
+            });
+          },
+        );
+      }),
+    );
+  }
+
+  void _submitReview() {
+    if (reviewText.isNotEmpty && rating > 0) {
+      FirebaseFirestore.instance
+          .collection('restaurant')
+          .doc(widget.restaurantId)
+          .collection('menuItems')
+          .doc(widget.itemId)
+          .collection('reviews')
+          .add({
+        'rating': rating,
+        'review': reviewText,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      setState(() {
+        reviewText = '';
+        rating = 0;
+      });
+    }
+  }
+}
