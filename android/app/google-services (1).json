@@ -7,7 +7,7 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:722133009908:android:c15d8b1c5ffaafcff5e5a1",
+        "mobilesdk_app_id": "1:722133009908:android:aa9eb7b9eed52313f5e5a1",
         "android_client_info": {
           "package_name": "com.example.menu_vista"
         }
@@ -21,6 +21,15 @@
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": []
+        },
+        "analytics_service": {
+          "status": "enabled"
+        },
+        "cloud_firestore": {
+          "status": "enabled"
+        },
+        "auth": {
+          "status": "enabled"
         }
       }
     }
