@@ -5,28 +5,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:menu_vista/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
+
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'dart:async'; // For managing timer for error message removal
 
-/*
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
-    }
-  }
-}
-*/
-/*
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
 
-*/
+
 
 
 void main() async {
@@ -59,6 +43,10 @@ class MenuVistaApp extends StatelessWidget {
       routes: {
         '/forgot_password': (context) => ForgotPasswordPage(),
         '/signup': (context) => SignUpPage(),
+        '/restaurant_list': (context) => RestaurantListPage(),
+        '/menu': (context) => MenuPage(),
+        '/profile': (context) => ProfilePage(),
+        '/cart': (context) => ShoppingCartPage(),
       },
     );
   }
@@ -74,6 +62,32 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   bool rememberMe = false;
   String errorMessage = '';
+  Timer? _timer; // Timer instance
+
+  @override
+  void dispose() {
+    // Cancel the timer if the widget is disposed
+    _timer?.cancel();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  void showError(String message) {
+    setState(() {
+      errorMessage = message;
+    });
+
+    // Cancel any existing timer
+    _timer?.cancel();
+
+    // Start a new timer to clear the error message after 1 minute
+    _timer = Timer(Duration(seconds: 5), () {
+      setState(() {
+        errorMessage = ''; // Clear the error message
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,16 +121,29 @@ class _LoginPageState extends State<LoginPage> {
                     TextField(
                       controller: emailController,
                       decoration: InputDecoration(
-                        hintText: 'Email',
-                        hintStyle: TextStyle(
-                          fontFamily: 'Oswald',
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
+                        labelText: 'Enter your Email',
+                        labelStyle: TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+                        floatingLabelStyle: TextStyle(
+                          color: Color.fromARGB(255, 255, 222, 89),
+                          shadows: [
+                            Shadow(
+                              color: Colors.black,
+                              offset: Offset(2.0, 2.0),
+                              blurRadius: 1.0,
+                            )
+                          ],
                         ),
+                        hintText: 'Email',
                         filled: true,
-                        fillColor: Color(0xFFD9D9D9),
+                        fillColor: Color.fromARGB(255, 206, 206, 206),
                         prefixIcon: Icon(Icons.email, color: Colors.black),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                          borderSide: BorderSide(
+                            color: Color.fromARGB(255, 255, 222, 89),
+                            width: 2.0,
+                          ),
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10.0),
                           borderSide: BorderSide.none,
@@ -133,16 +160,29 @@ class _LoginPageState extends State<LoginPage> {
                       controller: passwordController,
                       obscureText: true,
                       decoration: InputDecoration(
-                        hintText: 'Password',
-                        hintStyle: TextStyle(
-                          fontFamily: 'Oswald',
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
+                        labelText: 'Enter your Password',
+                        labelStyle: TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+                        floatingLabelStyle: TextStyle(
+                          color: Color.fromARGB(255, 255, 222, 89),
+                          shadows: [
+                            Shadow(
+                              color: Colors.black,
+                              offset: Offset(2.0, 2.0),
+                              blurRadius: 1.0,
+                            )
+                          ],
                         ),
+                        hintText: 'Password',
                         filled: true,
-                        fillColor: Color(0xFFD9D9D9),
+                        fillColor: Color.fromARGB(255, 206, 206, 206),
                         prefixIcon: Icon(Icons.lock, color: Colors.black),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                          borderSide: BorderSide(
+                            color: Color.fromARGB(255, 255, 222, 89),
+                            width: 2.0,
+                          ),
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10.0),
                           borderSide: BorderSide.none,
@@ -163,28 +203,6 @@ class _LoginPageState extends State<LoginPage> {
                             decoration: BoxDecoration(
                               color: Color(0xFFD9D9D9),
                               borderRadius: BorderRadius.circular(10.0),
-                            ),
-                            child: Row(
-                              children: [
-                                Switch(
-                                  value: rememberMe,
-                                  onChanged: (val) {
-                                    setState(() {
-                                      rememberMe = val;
-                                    });
-                                  },
-                                  activeColor: Colors.black,
-                                ),
-                                Text(
-                                  'Remember Me',
-                                  style: TextStyle(
-                                    fontFamily: 'Oswald',
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ],
                             ),
                             padding: EdgeInsets.all(8.0),
                           ),
@@ -207,7 +225,7 @@ class _LoginPageState extends State<LoginPage> {
                                   fontFamily: 'Oswald',
                                   color: Colors.black,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 15,
+                                  fontSize: 13,
                                 ),
                               ),
                             ),
@@ -233,36 +251,28 @@ class _LoginPageState extends State<LoginPage> {
 
                           // Example restaurant ID (replace with your logic)
                           String restaurantId = 'PR5Gs3rUuEvPK6HvCZcl';
+                          String itemId = '2001';
 
                           // Navigate to the RestaurantMenuPage after successful login
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => RestaurantMenuPage(restaurantId: restaurantId),
+                              builder: (context) => ItemPage(restaurantId: restaurantId, itemId: itemId),
                             ),
                           );
                         } on FirebaseAuthException catch (e) {
                           if (e.code == 'user-not-found') {
-                            setState(() {
-                              errorMessage = 'No user found for that email.';
-                            });
+                            showError('No user found for that email.');
                           } else if (e.code == 'wrong-password') {
-                            setState(() {
-                              errorMessage = 'Wrong password provided.';
-                            });
+                            showError('Wrong password provided.');
                           } else {
-                            setState(() {
-                              errorMessage = 'An unexpected error occurred: ${e.message}';
-                            });
+                            showError('An unexpected error occurred: ${e.message}');
                           }
                         } catch (e) {
                           // Handle any other errors
-                          setState(() {
-                            errorMessage = 'An unexpected error occurred: ${e.toString()}';
-                          });
+                          showError('An unexpected error occurred: ${e.toString()}');
                         }
                       },
-
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFFFFDE59),
                         padding: EdgeInsets.symmetric(
@@ -367,17 +377,810 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 
-class LoadingPage extends StatelessWidget {
+
+
+
+class RestaurantListPage extends StatefulWidget {
+  @override
+  _RestaurantListPageState createState() => _RestaurantListPageState();
+}
+
+class _RestaurantListPageState extends State<RestaurantListPage> {
+  List<Map<String, dynamic>> _restaurants = [];
+  List<Map<String, dynamic>> _favorites = [];
+  List<Map<String, dynamic>> _originalRestaurants = []; // List to store original order
+  bool _isLoading = false;
+  String _searchQuery = '';
+  bool _searchPerformed = false;
+
+  // Firestore query function to search for restaurants
+  Future<void> searchRestaurants(String query) async {
+    setState(() {
+      _isLoading = true;
+      _searchPerformed = true;
+    });
+
+    try {
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('restaurant')
+          .where('Rname', isGreaterThanOrEqualTo: query)
+          .where('Rname', isLessThanOrEqualTo: query + '\uf8ff')
+          .get();
+
+      List<Map<String, dynamic>> restaurants = snapshot.docs.map((doc) {
+        return {
+          'name': doc['Rname'],
+          'address': doc['address'],
+          'isFavorite': false, // Initially, no restaurant is favorited
+        };
+      }).toList();
+
+      // Store the original order of restaurants
+      _originalRestaurants = List<Map<String, dynamic>>.from(restaurants);
+
+      restaurants.removeWhere((r) => _favorites.any((fav) => fav['name'] == r['name']));
+      List<Map<String, dynamic>> combinedList = _favorites + restaurants;
+
+      setState(() {
+        _restaurants = combinedList; // Update the restaurant list with favorites on top
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error searching restaurants: $e');
+      setState(() {
+        _isLoading = false;
+        _restaurants = [];
+      });
+    }
+  }
+
+  // Function to toggle the favorite status of a restaurant
+  void toggleFavorite(Map<String, dynamic> restaurant) {
+    setState(() {
+      restaurant['isFavorite'] = !restaurant['isFavorite']; // Toggle favorite state
+
+      if (restaurant['isFavorite']) {
+        _favorites.add(restaurant); // Add to favorites
+        _restaurants.remove(restaurant); // Remove from the regular list
+        _restaurants.insert(0, restaurant); // Insert at the top of the list
+      } else {
+        _favorites.removeWhere((fav) => fav['name'] == restaurant['name']);
+        _restaurants.remove(restaurant);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFFEAFCFA),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: Color(0xFF1B3C3D),
+        leading: IconButton(
+          icon: Icon(Icons.settings, color: Colors.white),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UnderConstructionPage(),
+              ),
+            );
+          },
+        ),
+        title: Center(
+          child: Image.asset(
+            'assets/images/MenuVistaicon.png',
+            height: 50,
+            width: 200,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Image.asset(
+              'assets/images/topmenuicon.png',
+              height: 50,
+              width: 50,
+            ),
+            onPressed: () {
+              // Currently does nothing, it's a blank space
+            },
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // Search Box
+            TextField(
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value; // Update the search query
+                });
+                if (value.isNotEmpty) {
+                  searchRestaurants(value); // Call the search function
+                } else {
+                  setState(() {
+                    _restaurants = _favorites; // Only show favorites if search is empty
+                    _searchPerformed = false; // Reset the search indicator
+                  });
+                }
+              },
+              decoration: InputDecoration(
+                hintText: 'Type Restaurant Name...',
+                prefixIcon: Icon(Icons.search),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                  borderSide: BorderSide(
+                    color: Colors.black, // Set the border color to black
+                    width: 1.0,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                  borderSide: BorderSide(
+                    color: Colors.black, // Set the focused border color to black
+                    width: 2.0,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                  borderSide: BorderSide(
+                    color: Colors.black, // Set the enabled border color to black
+                    width: 1.0,
+                  ),
+                ),
+              ),
+            ),
+
+            SizedBox(height: 20),
+            // Scrollable list of restaurants
+            Expanded(
+              child: _isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : _restaurants.isEmpty && _searchPerformed
+                  ? Center(child: Text('Not Available'))
+                  : SingleChildScrollView(
+                child: Column(
+                  children: _restaurants.map((restaurant) {
+                    return GestureDetector(
+                      onTap: () {
+                        // Navigate to restaurant page
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          color: Color(0xFF1B3C3D),
+                          borderRadius: BorderRadius.circular(10.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 5.0,
+                              spreadRadius: 2.0,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  restaurant['name'],
+                                  style: TextStyle(
+                                    fontFamily: 'Oswald',
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Text(
+                                  restaurant['address'],
+                                  style: TextStyle(
+                                    fontFamily: 'Oswald',
+                                    fontSize: 16,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                Icons.star,
+                                color: restaurant['isFavorite'] ? Colors.yellow : Colors.grey,
+                              ),
+                              onPressed: () {
+                                toggleFavorite(restaurant); // Toggle favorite state
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: Container (
+        color: Color(0xFF1B3C3D),
+        height: 50,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            // Profile Button
+            Flexible(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color(0xFF1B3C3D),
+                  borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black45,
+                      offset: Offset(1, 1), // Smaller shadow
+                      blurRadius: 1.0,
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  iconSize: 20.0, // Smaller icon size to fit better
+                  icon: Image.asset(
+                    'assets/images/profileicon.png', // Add your image path here
+                  ),
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/profile');
+                  },
+                ),
+              ),
+            ),
+            // Shopping Cart Button
+            Flexible(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color(0xFF1B3C3D),
+                  borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black45,
+                      offset: Offset(1, 1),
+                      blurRadius: 1.0,
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  iconSize: 20.0, // Same smaller icon size
+                  icon: Image.asset(
+                    'assets/images/shoppingcarticon.png', // Add your image path here
+                  ),
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/cart');
+                  },
+                ),
+              ),
+            ),
+            // Menu Button
+            Flexible(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color(0xFF1B3C3D),
+                  borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black45,
+                      offset: Offset(1, 1),
+                      blurRadius: 1.0,
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  iconSize: 20.0, // Same smaller icon size
+                  icon: Image.asset(
+                    'assets/images/bottommenuicon.png', // Add your image path here
+                  ),
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/menu');
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
+
+class UnderConstructionPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Under Construction'),
+        backgroundColor: Colors.black,
+      ),
       body: Center(
         child: Text(
-          'Logged in',
+          'Under Construction',
           style: TextStyle(
-            fontFamily: 'Oswald',
             fontSize: 24,
             fontWeight: FontWeight.bold,
+            color: Colors.red,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class MenuPage extends StatefulWidget {
+  @override
+  _MenuPageState createState() => _MenuPageState();
+}
+
+class _MenuPageState extends State<MenuPage> {
+  bool isVeg = true; // For Veg/Non-Veg toggle
+  bool isLiked = false; // For the heart (like/unlike) functionality
+  String vegStatus = 'Veg'; // Veg/Non-Veg status
+  String itemId ='2001';
+  String restaurantId ='PR5Gs3rUuEvPK6HvCZcl';
+  Map<String, bool> mealSelections = {
+    'Breakfast': false,
+    'Lunch': false,
+    'Snacks': false,
+    'Dinner': false,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color(0xFFEAFCFA),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: Color(0xFF1B3C3D),
+        leading: IconButton(
+          icon: Icon(Icons.settings, color: Colors.white),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UnderConstructionPage(),
+              ),
+            );
+          },
+        ),
+        title: Center(
+          child: Image.asset(
+            'assets/images/MenuVistaicon.png',
+            height: 50,
+            width: 200,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Image.asset(
+              'assets/images/topmenuicon.png',
+              height: 50,
+              width: 50,
+            ),
+            onPressed: () {
+              // Does nothing for now
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              // Search bar
+              TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search burger, beverage etc...',
+                  prefixIcon: Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                    borderSide: BorderSide(
+                      color: Colors.black,
+                      width: 1.0,
+                    ),
+                  ),
+                ),
+              ),
+
+              SizedBox(height: 10),
+
+              // Meal category buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildMealButton('Breakfast'),
+                  _buildMealButton('Lunch'),
+                  _buildMealButton('Snacks'),
+                  _buildMealButton('Dinner'),
+                ],
+              ),
+
+              SizedBox(height: 10),
+
+              // Veg/Non-Veg Toggle
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start, // Aligns content inside the column to the left
+                      children: [
+                        Text(
+                          'Veg/Non-Veg',
+                          style: TextStyle(
+                            fontFamily: 'Oswald',
+                            fontSize: 16,
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        // Wrap the Switch in a Container to add a border
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.black), // Black border
+                            borderRadius: BorderRadius.circular(20), // Optional: Add rounded corners
+                          ),
+                          child: Switch(
+                            value: isVeg,
+                            onChanged: (value) {
+                              setState(() {
+                                isVeg = value;
+                                vegStatus = isVeg ? 'Veg' : 'Non-Veg';
+                              });
+                            },
+                            activeColor: Colors.green,
+                            inactiveThumbColor: Colors.red[300],
+                            inactiveTrackColor: Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+
+
+                ],
+              ),
+
+              SizedBox(height: 10),
+
+              // Food item button (Fries)
+              Container (
+                padding: EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  color: Color(0xFFFFDE59),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 5.0,
+                      spreadRadius: 2.0,
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    // Positioned for the heart icon at the top-right corner
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: IconButton(
+                        iconSize: 30.0,
+                        icon: Icon(
+                          isLiked ? Icons.favorite : Icons.favorite,
+                          color: isLiked ? Colors.blueGrey : Color(0xFF1B3C3D),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            isLiked = !isLiked;
+                          });
+                        },
+                      ),
+                    ),
+                    // Content of the item (fries image, text, price, size buttons, etc.)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(width: 0),
+                        // Image on the left inside rounded rectangle
+                        Column(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(25),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: Colors.black, width: 0),
+                                ),
+                                child: Image.asset(
+                                  'assets/images/fries.png', // Replace this with your actual image path
+                                  height: 130, // Adjusted height for larger image
+                                  width: 100, // Adjusted width for larger image
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(width: 5),
+                        
+                        // Text details
+                        Expanded (
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Title inside a rectangle
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ItemPage(restaurantId: restaurantId, itemId: itemId),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  
+                                  padding: EdgeInsets.all(8.0),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    'Peri Peri Fries',
+                                    style: TextStyle(
+                                      fontFamily: 'Oswald',
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                               const SizedBox(width: 5),
+                                Text(
+                                  'Crunchy Fries topped with tangy tomato sauce',
+                                  style: TextStyle(
+                                    fontFamily: 'Oswald',
+                                    fontSize: 12,
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 10),
+
+                                // Size selection buttons and price
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        _buildSizeButton('Medium'),
+                                        SizedBox(width: 5),
+                                        _buildSizeButton('Small'),
+                                        SizedBox(width: 5),
+                                        _buildSizeButton('Large'),
+                                      ],
+                                    ),
+                                    // Price inside rounded rectangle
+                                    Container(
+                                      padding: EdgeInsets.symmetric(vertical:5, horizontal: 10),
+                                      decoration: BoxDecoration(
+                                        color: Color(0xFF1B3C3D),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min, // Make the row take only the necessary space
+                                        children: [
+                                          Text(
+                                            'Rs 120',
+                                            style: TextStyle(
+                                              fontFamily: 'Oswald',
+                                              fontSize:8,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                               ),
+                            
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: Container(
+        color: Color(0xFF1B3C3D),
+        height: 50,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            // Profile Button
+            Flexible(
+              child: IconButton(
+                iconSize: 20.0,
+                icon: Image.asset(
+                  'assets/images/profileicon.png',
+                ),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/profile');
+                },
+              ),
+            ),
+            // Shopping Cart Button
+            Flexible(
+              child: IconButton(
+                iconSize: 20.0,
+                icon: Image.asset(
+                  'assets/images/shoppingcarticon.png',
+                ),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/cart');
+                },
+              ),
+            ),
+            // Menu Button
+            Flexible(
+              child: IconButton(
+                iconSize: 20.0,
+                icon: Image.asset(
+                  'assets/images/bottommenuicon.png',
+                ),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/menu');
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Widget for building meal category buttons with toggle effect
+  Widget _buildMealButton(String mealType) {
+    bool isSelected = mealSelections[mealType] ?? false;
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isSelected ? Color(0xFF3CC2C6) : Color(0xFF1B3C3D),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0), // Adjust padding here
+        minimumSize: Size(50,50), // Set minimum size for width and height
+      ),
+      onPressed: () {
+        setState(() {
+          // Toggle selection state
+          mealSelections.forEach((key, value) {
+            mealSelections[key] = false; // Reset others
+          });
+          mealSelections[mealType] = !isSelected; // Toggle current
+        });
+      },
+      child: Text(
+        mealType,
+        style: TextStyle(
+          color: Colors.white, // White text
+          fontSize: 14, // You can adjust font size if needed
+        ),
+      ),
+    );
+  }
+
+
+  // Widget for size buttons (Medium, Small, Large) filled with color 1B3C3D
+  Widget _buildSizeButton(String size) {
+    return OutlinedButton(
+      style: OutlinedButton.styleFrom(
+        backgroundColor: Color(0xFF1B3C3D),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        side: BorderSide(color: Color(0xFF1B3C3D)),
+        padding: EdgeInsets.symmetric(vertical:5, horizontal:10), // Adjust padding here
+        minimumSize: Size(2,2), // Set minimum size for width and height
+      ),
+      onPressed: () {
+        // Size selection action
+      },
+      child: Text(
+        size,
+        style: TextStyle(
+          color: Colors.white, // White text
+          fontSize: 8,
+          fontWeight: FontWeight.bold, // You can adjust font size if needed
+        ),
+      ),
+    );
+  }
+}
+
+
+class ProfilePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Profile'),
+        backgroundColor: Colors.black,
+      ),
+      body: Center(
+        child: Text(
+          'Under Construction',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.red,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ShoppingCartPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Shopping Cart'),
+        backgroundColor: Colors.black,
+      ),
+      body: Center(
+        child: Text(
+          'Under Construction',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.red,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class CustomisePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Shopping Cart'),
+        backgroundColor: Colors.black,
+      ),
+      body: Center(
+        child: Text(
+          'Under Construction',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.red,
           ),
         ),
       ),
@@ -398,56 +1201,50 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     String email = emailController.text.trim();
 
     try {
-      // Query Firestore for the user's email
-      var querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: email)
-          .get();
-
-      if (querySnapshot.docs.isEmpty) {
+      // Check if the email is registered
+      List<String> signInMethods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+      print("$email");
+      print("$signInMethods");
+      if (signInMethods.isNotEmpty) {
         setState(() {
           message = 'No user found for that email.';
         });
+        return;
+
+        // ignore: dead_code
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('No user found for that email.'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('This email is not registered.'), backgroundColor: Colors.red),
         );
-      } else {
-        // Use Firebase Authentication to send password reset email
-        await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-
-        setState(() {
-          message = 'Password reset link sent to $email.';
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Password reset link sent to $email'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Simulate a delay and go back to the login page
-        Future.delayed(Duration(seconds: 2), () {
-          Navigator.pop(context);
-        });
+        return;
       }
+
+      // If the email is registered, send the password reset email
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      setState(() {
+        message = 'Password reset link sent to $email. Please check your inbox.';
+      });
+      // Show a SnackBar notification for success and navigate back to login page
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Password reset link sent to $email'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Wait for 2 seconds, then pop back to the login page
+      Future.delayed(Duration(seconds: 2), () {
+        Navigator.pop(context);
+      });
     } catch (e) {
       setState(() {
         message = 'Error occurred: ${e.toString()}';
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('This email is not registered.'), backgroundColor: Colors.red),
       );
+      return;
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -464,7 +1261,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Image.asset(
-              'assets/images/logo.png', // Replace with your logo file path
+              'assets/images/unnamed.png', // Replace with your logo file path
               height: 250,
               width: 250,
             ),
@@ -532,32 +1329,28 @@ class _SignUpPageState extends State<SignUpPage> {
   String errorMessage = '';
 
   Future<void> signUp() async {
-    String name = nameController.text.trim();
-    String email = emailController.text.trim();
-    String password = passwordController.text.trim();
+    String name = nameController.text;
+    String email = emailController.text;
+    String password = passwordController.text;
 
     try {
-      // Create a new user in Firebase Authentication
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
 
-      // After creating the user, store additional information in Firestore
-      await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .set({
         'name': name,
         'email': email,
       });
 
-      // Clear previous error message
       setState(() {
         errorMessage = '';
       });
 
-      // Navigate back to login or main menu after successful sign-up
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
-      // Handle specific FirebaseAuth errors
       if (e.code == 'weak-password') {
         setState(() {
           errorMessage = 'The password provided is too weak.';
@@ -572,9 +1365,8 @@ class _SignUpPageState extends State<SignUpPage> {
         });
       }
     } catch (e) {
-      // Handle any other unexpected errors
       setState(() {
-        errorMessage = 'An unexpected error occurred: ${e.toString()}';
+        errorMessage = 'An error occurred: ${e.toString()}';
       });
     }
   }
@@ -599,14 +1391,14 @@ class _SignUpPageState extends State<SignUpPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              SizedBox(height: 30), // Space between the top and logo
+              SizedBox(height: 30),
               Center(
                 child: Image.asset(
-                  'assets/images/logo.png', // Path to your logo image
-                  height: 150, // Image size
+                  'assets/images/unnamed.png',
+                  height: 150,
                 ),
               ),
-              SizedBox(height: 30), // Space between the logo and form
+              SizedBox(height: 30),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Column(
@@ -627,13 +1419,31 @@ class _SignUpPageState extends State<SignUpPage> {
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Color(0xFFCECECE),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Color.fromARGB(255, 255, 222, 89),
+                            width: 2.0,
+                          ),
+                        ),
+                        labelText: 'Enter your Name',
+                        labelStyle: TextStyle(color: Colors.black),
+                        floatingLabelStyle: TextStyle(
+                          color: Color(0xFFFFDE59),
+                          shadows: [
+                            Shadow(
+                              color: Colors.black,
+                              offset: Offset(2.0, 2.0),
+                              blurRadius: 1.0,
+                            )
+                          ],
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
                       ),
                     ),
-                    SizedBox(height: 20), // Space between input fields
+                    SizedBox(height: 20),
 
                     // Email Input Field
                     Text(
@@ -650,6 +1460,24 @@ class _SignUpPageState extends State<SignUpPage> {
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Color(0xFFCECECE),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Color.fromARGB(255, 255, 222, 89),
+                            width: 2.0,
+                          ),
+                        ),
+                        labelText: 'Enter your Email',
+                        labelStyle: TextStyle(color: Colors.black),
+                        floatingLabelStyle: TextStyle(
+                          color: Color(0xFFFFDE59),
+                          shadows: [
+                            Shadow(
+                              color: Colors.black,
+                              offset: Offset(2.0, 2.0),
+                              blurRadius: 1.0,
+                            )
+                          ],
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -674,6 +1502,24 @@ class _SignUpPageState extends State<SignUpPage> {
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Color(0xFFCECECE),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Color.fromARGB(255, 255, 222, 89),
+                            width: 2.0,
+                          ),
+                        ),
+                        labelText: 'Enter your Password',
+                        labelStyle: TextStyle(color: Colors.black),
+                        floatingLabelStyle: TextStyle(
+                          color: Color(0xFFFFDE59),
+                          shadows: [
+                            Shadow(
+                              color: Colors.black,
+                              offset: Offset(2.0, 2.0),
+                              blurRadius: 1.0,
+                            )
+                          ],
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -695,7 +1541,13 @@ class _SignUpPageState extends State<SignUpPage> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Text('Create Account'),
+                        child: Text(
+                          'Create Account',
+                          style: TextStyle(
+                            fontFamily: 'Oswald',
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
 
@@ -721,7 +1573,7 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 }
 
-
+/*
 class RestaurantMenuPage extends StatelessWidget {
   final String restaurantId;
 
@@ -778,6 +1630,7 @@ class RestaurantMenuPage extends StatelessWidget {
     );
   }
 }
+*/
 
 class ItemPage extends StatefulWidget {
   final String restaurantId;
@@ -806,13 +1659,15 @@ class _ItemPageState extends State<ItemPage> {
         .collection('restaurant')
         .doc(widget.restaurantId)
         .collection('menuItems')
+        .doc('MealTypes') // Assuming MealTypes is a single doc, you can adjust if needed
+        .collection('snacks')
         .doc(widget.itemId)
         .get();
 
     if (snapshot.exists) {
       setState(() {
         itemData = snapshot.data() as Map<String, dynamic>;
-        price = itemData!['mediumPrice']; // Set initial price to medium
+        price = itemData!['medium']; // Set initial price to medium
       });
     }
   }
@@ -820,15 +1675,30 @@ class _ItemPageState extends State<ItemPage> {
   // Update price based on selected size
   void _updatePrice(String size) {
     setState(() {
-      selectedSize = size;
+      selectedSize = size; // Update selected size
+      // Update price based on selected size
       if (size == 'Small') {
-        price = itemData!['smallPrice'];
+        price = itemData!['small'];
       } else if (size == 'Medium') {
-        price = itemData!['mediumPrice'];
+        price = itemData!['medium'];
       } else if (size == 'Large') {
-        price = itemData!['largePrice'];
+        price = itemData!['large'];
       }
     });
+  }
+
+  // Function to add to cart (implementation can vary)
+  void _addToCart() {
+    // Add the selected item to the cart
+    // You can implement your add to cart logic here
+    print('Added to cart: ${itemData!['itemname']} - Size: $selectedSize - Price: Rs $price');
+    // Show confirmation (optional)
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${itemData!['itemname']} added to cart! Size: $selectedSize', style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),),
+        backgroundColor: Color(0xFFFFDE59),
+      ),
+    );
   }
 
   @override
@@ -841,11 +1711,43 @@ class _ItemPageState extends State<ItemPage> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-
     return Scaffold(
+      backgroundColor: Color(0xFFEAFCFA),
       appBar: AppBar(
-        title: Text(itemData!['name']),
+        automaticallyImplyLeading: false,
+        backgroundColor: Color(0xFF1B3C3D),
+        leading: IconButton(
+          icon: Icon(Icons.settings, color: Colors.white),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UnderConstructionPage(),
+              ),
+            );
+          },
+        ),
+        title: Center(
+          child: Image.asset(
+            'assets/images/MenuVistaicon.png',
+            height: 50,
+            width: 200,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Image.asset(
+              'assets/images/topmenuicon.png',
+              height: 50,
+              width: 50,
+            ),
+            onPressed: () {
+              // Currently does nothing, it's a blank space
+            },
+          ),
+        ],
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
@@ -853,120 +1755,271 @@ class _ItemPageState extends State<ItemPage> {
           children: [
             // Item image
             Center(
-              child: Image.network(itemData!['imageUrl'], height: 200),
-            ),
-            SizedBox(height: 10),
-
-            // Item description
-            Text(
-              itemData!['description'],
-              style: TextStyle(fontSize: 18),
-            ),
-            SizedBox(height: 10),
-
-            // Ingredients
-            // Ingredients
-            Text('Ingredients:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            Text(
-              itemData?['ingredients'] != null && itemData!['ingredients'] is List
-                  ? itemData!['ingredients'].join(', ')
-                  : 'No ingredients available',
-            ),
-
-
-            SizedBox(height: 20),
-
-            // Size selection and price update
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _sizeOption('Small', itemData!),
-                _sizeOption('Medium', itemData!),
-                _sizeOption('Large', itemData!),
-              ],
-            ),
-            SizedBox(height: 10),
-            Center(
-              child: Text(
-                'Price: Rs $price',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              child: Container(
+                padding: const EdgeInsets.all(0.0),
+                width: 500,
+                height: 250,
+                child: Image.asset(
+                  'assets/images/fries.png',
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
 
-            // Add to Cart Button
             SizedBox(height: 10),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  // Add item to cart logic here
-                },
-                child: Text('Add to Cart'),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-              ),
-            ),
 
-            // Review and Rating Button
+            // Item name in bold
+            Text(
+              itemData!['itemname'],
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
             SizedBox(height: 10),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  String itemId ='t2PnlkfFIP8c2K2PSw1F';
-                  String restaurantId = 'PR5Gs3rUuEvPK6HvCZcl';
-                  Navigator.push(
-                    context,
-                    /*MaterialPageRoute(
-                      builder: (context) => ItemDetailPage(itemId: itemId),
-                    ),*/
-                    MaterialPageRoute(
-                      builder: (context) => ReviewPage(restaurantId: restaurantId, itemId: itemId),
+
+            // Box for description, size selection and buttons
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Color(0xFF1B3C3D),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.5),
+                    blurRadius: 5,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Description header
+                  Text(
+                    'Description',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  SizedBox(height: 5),
+
+                  // Item description with smaller font
+                  Text(
+                    itemData!['description'],
+                    style: TextStyle(fontSize: 14, color: Color.fromARGB(255, 255, 255, 255)), // Smaller font for description
+                  ),
+                  SizedBox(height: 10),
+
+                  // Size selection buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _sizeOption('Small'),
+                      _sizeOption('Medium'),
+                      _sizeOption('Large'),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+
+                  // Price display
+                  Center(
+                    child: Text(
+                      'Price: Rs $price',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: const Color.fromARGB(255, 255, 255, 255)),
                     ),
-                  );
-                },
-                child: Text('Rating and Reviews'),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
+                  ),
+                  SizedBox(height: 10),
+
+                  // Customization button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CustomisePage(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Customize',
+                            style: TextStyle(fontSize: 15, color: Colors.black, fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFFFFDE59),
+                            padding: EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            side: BorderSide(color: Color(0xFF1B3C3D), width: 3),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 10),
+                      // Rating and Reviews Button
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ReviewPage(restaurantId: widget.restaurantId, itemId: widget.itemId),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Ratings',
+                            style: TextStyle(fontSize: 15, color: Colors.black, fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFFFFDE59),
+                            padding: EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            side: BorderSide(color: Color(0xFF1B3C3D), width: 3),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  // Add to Cart Button
+                  ElevatedButton(
+                    onPressed: () {
+                      _addToCart(); // Directly add to cart
+                    },
+                    child: Text(
+                      'Add to Cart',
+                      style: TextStyle(fontSize: 15, color: Colors.black, fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFFFFDE59),
+                      padding: EdgeInsets.symmetric(vertical: 15, horizontal: 142),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      side: BorderSide(color: Color(0xFF1B3C3D), width: 3),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.teal,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton(icon: Icon(Icons.account_circle, color: Colors.white), onPressed: () {}),
-              IconButton(icon: Icon(Icons.shopping_cart, color: Colors.white), onPressed: () {}),
-              IconButton(icon: Icon(Icons.menu, color: Colors.white), onPressed: () {}),
-            ],
-          ),
+      bottomNavigationBar: Container (
+        color: Color(0xFF1B3C3D),
+        height: 50,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            // Profile Button
+            Flexible(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color(0xFF1B3C3D),
+                  borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black45,
+                      offset: Offset(1, 1), // Smaller shadow
+                      blurRadius: 1.0,
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  iconSize: 20.0, // Smaller icon size to fit better
+                  icon: Image.asset(
+                    'assets/images/profileicon.png', // Add your image path here
+                  ),
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/profile');
+                  },
+                ),
+              ),
+            ),
+            // Shopping Cart Button
+            Flexible(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color(0xFF1B3C3D),
+                  borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black45,
+                      offset: Offset(1, 1),
+                      blurRadius: 1.0,
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  iconSize: 20.0, // Same smaller icon size
+                  icon: Image.asset(
+                    'assets/images/shoppingcarticon.png', // Add your image path here
+                  ),
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/cart');
+                  },
+                ),
+              ),
+            ),
+            // Menu Button
+            Flexible(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color(0xFF1B3C3D),
+                  borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black45,
+                      offset: Offset(1, 1),
+                      blurRadius: 1.0,
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  iconSize: 20.0, // Same smaller icon size
+                  icon: Image.asset(
+                    'assets/images/bottommenuicon.png', // Add your image path here
+                  ),
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/menu');
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   // Widget to display the size options
-  Widget _sizeOption(String size, Map<String, dynamic> item) {
+  Widget _sizeOption(String size) {
+    bool isSelected = selectedSize == size; // Check if this size is selected
     return GestureDetector(
       onTap: () {
-        _updatePrice(size);
+        _updatePrice(size); // Update price when the option is tapped
       },
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         margin: EdgeInsets.only(right: 8),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(5),
-          color: selectedSize == size ? Colors.teal : Colors.grey.shade300,
+          color: isSelected ? Color.fromARGB(255, 161, 140, 57) : Color(0xFFFFDE59), // Change to orange if selected, yellow otherwise
         ),
-        child: Text(
-          size,
-          style: TextStyle(color: selectedSize == size ? Colors.white : Colors.black),
+        width: 100, // Increased width
+        child: Center(
+          child: Text(
+            size,
+            style: TextStyle(color: isSelected ? Colors.white : Colors.black), // Change text color based on selection
+          ),
         ),
       ),
     );
   }
 }
+
 
 
 
@@ -982,21 +2035,94 @@ class ReviewPage extends StatefulWidget {
 }
 
 class _ReviewPageState extends State<ReviewPage> {
-  String selectedSize = 'Medium';
   String reviewText = '';
   int rating = 0;
+  String username = 'Anonymous'; // Default username, can be dynamic if needed.
+  double averageRating = 0.0; // To store the average rating.
+
+  @override
+  void initState() {
+    super.initState();
+    _calculateAverageRating();
+    _fetchUsername(); // Fetch username on initialization.
+  }
+
+  void _fetchUsername() async {
+    User? user = FirebaseAuth.instance.currentUser; // Get the currently logged-in user
+
+    if (user != null) {
+      setState(() {
+        username = user.displayName ?? user.email ?? 'Anonymous'; // Get the user's display name, email, or fallback to 'Anonymous'
+      });
+    }
+  }
+
+  // Calculate the average rating for the item.
+  void _calculateAverageRating() async {
+    QuerySnapshot reviewSnapshot = await FirebaseFirestore.instance
+        .collection('reviews')
+        .doc(widget.itemId)
+        .collection('userreviews')
+        .get();
+
+    if (reviewSnapshot.docs.isNotEmpty) {
+      double totalRating = 0;
+      reviewSnapshot.docs.forEach((doc) {
+        var reviewData = doc.data() as Map<String, dynamic>;
+        totalRating += reviewData['rating'];
+      });
+
+      setState(() {
+        averageRating = totalRating / reviewSnapshot.size;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFFEAFCFA),
       appBar: AppBar(
-        title: Text('Item Details'),
+        automaticallyImplyLeading: false,
+        backgroundColor: Color(0xFF1B3C3D),
+        leading: IconButton(
+          icon: Icon(Icons.settings, color: Colors.white),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UnderConstructionPage(),
+              ),
+            );
+          },
+        ),
+        title: Center(
+          child: Image.asset(
+            'assets/images/MenuVistaicon.png',
+            height: 50,
+            width: 200,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Image.asset(
+              'assets/images/topmenuicon.png',
+              height: 50,
+              width: 50,
+            ),
+            onPressed: () {
+              // Currently does nothing, it's a blank space
+            },
+          ),
+        ],
       ),
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance
             .collection('restaurant')
             .doc(widget.restaurantId)
             .collection('menuItems')
+            .doc('MealTypes')
+            .collection('snacks')
             .doc(widget.itemId)
             .get(),
         builder: (context, snapshot) {
@@ -1014,57 +2140,196 @@ class _ReviewPageState extends State<ReviewPage> {
             return Center(child: Text('No data available for this item.'));
           }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Image.network(item['imageUrl']),
-                SizedBox(height: 16),
-                Text(item['name'], style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                SizedBox(height: 8),
-                Text(item['description'], style: TextStyle(fontSize: 16)),
-                SizedBox(height: 16),
-                Text('Customer Reviews', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                _buildReviewsList(),
-                SizedBox(height: 16),
-                Text('Add Your Review', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                SizedBox(height: 8),
-                TextField(
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Write a review',
+          return Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Image.asset(
+                        'assets/images/fries.png',
+                        fit: BoxFit.cover,
+                        width: double.infinity, // Fit the image to the full width of the screen.
+                      ),
+                      SizedBox(height: 16),
+                      Text(item['itemname'], style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 8),
+                      Text(item['description'], style: TextStyle(fontSize: 16)),
+                      SizedBox(height: 16),
+                      // Display the average rating as stars
+                      Row(
+                        children: [
+                          Text('Average Rating: ', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                          Row(
+                            children: List.generate(5, (index) {
+                              return Icon(
+                                index < averageRating ? Icons.star : Icons.star_border,
+                                color: Colors.amber,
+                              );
+                            }),
+                          ),
+                          SizedBox(width: 8),
+                          Text(averageRating.toStringAsFixed(1), style: TextStyle(fontSize: 16)),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      Text('Customer Reviews', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      
+                      // Reviews Box with Dark Background
+                      Container( // Dark background for customer reviews section
+                        decoration: BoxDecoration(
+                          color: const Color.fromARGB(135, 20, 63, 68),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: EdgeInsets.all(8),
+                        child: _buildReviewsList(), // Customer reviews list
+                      ),
+                    ],
                   ),
-                  onChanged: (text) {
-                    setState(() {
-                      reviewText = text;
-                    });
-                  },
                 ),
-                SizedBox(height: 8),
-                _buildRatingBar(),
-                SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: _submitReview,
-                  child: Text('Submit Review'),
+              ),
+
+              // Submit Review Section
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Add Your Review', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
+                    Container(
+                      color: Colors.white, // Change background color to white
+                      child: TextField(
+                        maxLines: 2, // Make the review input smaller
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: 'Write a review',
+                        ),
+                        onChanged: (text) {
+                          setState(() {
+                            reviewText = text;
+                          });
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    _buildRatingBar(),
+                    SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: _submitReview,
+                      child: Text('Submit Review', style: TextStyle(color: Colors.black)),
+                      style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFFFFDE59),
+                      padding: EdgeInsets.symmetric(vertical: 15, horizontal: 142),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      side: BorderSide(color: Color(0xFF1B3C3D), width: 3),
+                    ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),
+      bottomNavigationBar: Container (
+        color: Color(0xFF1B3C3D),
+        height: 50,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            // Profile Button
+            Flexible(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color(0xFF1B3C3D),
+                  borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black45,
+                      offset: Offset(1, 1), // Smaller shadow
+                      blurRadius: 1.0,
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  iconSize: 20.0, // Smaller icon size to fit better
+                  icon: Image.asset(
+                    'assets/images/profileicon.png', // Add your image path here
+                  ),
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/profile');
+                  },
+                ),
+              ),
+            ),
+            // Shopping Cart Button
+            Flexible(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color(0xFF1B3C3D),
+                  borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black45,
+                      offset: Offset(1, 1),
+                      blurRadius: 1.0,
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  iconSize: 20.0, // Same smaller icon size
+                  icon: Image.asset(
+                    'assets/images/shoppingcarticon.png', // Add your image path here
+                  ),
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/cart');
+                  },
+                ),
+              ),
+            ),
+            // Menu Button
+            Flexible(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color(0xFF1B3C3D),
+                  borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black45,
+                      offset: Offset(1, 1),
+                      blurRadius: 1.0,
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  iconSize: 20.0, // Same smaller icon size
+                  icon: Image.asset(
+                    'assets/images/bottommenuicon.png', // Add your image path here
+                  ),
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/menu');
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+
     );
   }
 
   Widget _buildReviewsList() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('restaurant')
-          .doc(widget.restaurantId)
-          .collection('menuItems')
-          .doc(widget.itemId)
           .collection('reviews')
+          .doc(widget.itemId)
+          .collection('userreviews')
           .orderBy('timestamp', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
@@ -1075,7 +2340,7 @@ class _ReviewPageState extends State<ReviewPage> {
         var reviews = snapshot.data!.docs;
 
         if (reviews.isEmpty) {
-          return Text('No reviews yet');
+          return Text('No reviews yet', style: TextStyle(color: Colors.white)); // Change text color to white for visibility.
         }
 
         return ListView.builder(
@@ -1085,8 +2350,20 @@ class _ReviewPageState extends State<ReviewPage> {
           itemBuilder: (context, index) {
             var review = reviews[index].data() as Map<String, dynamic>;
             return ListTile(
-              title: Text('Rating: ${review['rating']}'),
-              subtitle: Text(review['review']),
+              title: Row(
+                children: [
+                  Text(review['username'], style: TextStyle(color: Colors.white)), // Change text color to white.
+                  SizedBox(width: 8),
+                  Row(
+                    children: List.generate(5, (i) => Icon(
+                      i < review['rating'] ? Icons.star : Icons.star_border,
+                      color: Colors.amber,
+                      size: 16,
+                    )),
+                  ),
+                ],
+              ),
+              subtitle: Text(review['review'], style: TextStyle(color: Colors.white)), // Change text color to white.
             );
           },
         );
@@ -1114,22 +2391,30 @@ class _ReviewPageState extends State<ReviewPage> {
 
   void _submitReview() {
     if (reviewText.isNotEmpty && rating > 0) {
+      // Create a new review document with a unique ID
       FirebaseFirestore.instance
-          .collection('restaurant')
-          .doc(widget.restaurantId)
-          .collection('menuItems')
-          .doc(widget.itemId)
           .collection('reviews')
-          .add({
-        'rating': rating,
+          .doc(widget.itemId)
+          .collection('userreviews')
+          .add({ // Use `add()` to automatically generate a unique document ID
+        'username': username, // Use the dynamically fetched username
         'review': reviewText,
+        'rating': rating,
         'timestamp': FieldValue.serverTimestamp(),
-      });
+      }).then((_) {
+        // Successfully added review
+        setState(() {
+          reviewText = '';
+          rating = 0;
+        });
 
-      setState(() {
-        reviewText = '';
-        rating = 0;
+        // Recalculate average rating after submitting the review.
+        _calculateAverageRating();
+      }).catchError((error) {
+        // Handle any errors that occur during submission
+        print("Failed to add review: $error");
       });
     }
   }
 }
+
