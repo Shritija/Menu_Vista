@@ -38,8 +38,6 @@ dependencies:
   firebase_core: ^3.5.0
   firebase_auth: ^5.3.0
   cloud_firestore: ^5.4.2
-  upi_pay: ^1.0.1
-  url_launcher: ^6.1.7
 
 
 dev_dependencies:

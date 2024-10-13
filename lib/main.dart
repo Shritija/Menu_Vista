@@ -6,8 +6,6 @@ import 'package:menu_vista/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async'; // For managing timer for error message removal
-import 'package:upi_pay/upi_pay.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 
 
@@ -45,10 +43,7 @@ class MenuVistaApp extends StatelessWidget {
         '/restaurant_list': (context) => RestaurantListPage(),
         '/menu': (context) => MenuPage( Rid: ModalRoute.of(context)!.settings.arguments as String),
         '/profile': (context) => ProfilePage(),
-        '/cart': (context) => CartPage(restaurantId: "PR5Gs3rUuEvPK6HvCZcl", itemId: "2001"),
-        //'/payment': (context) => PaymentPage(cartItems: cartItems as String),
-        '/item': (context) => ItemPage(restaurantId: "PR5Gs3rUuEvPK6HvCZcl", itemId: "2001"),
-        '/review': (context) => ReviewPage(restaurantId: "PR5Gs3rUuEvPK6HvCZcl", itemId: "2001"),
+        '/cart': (context) => ShoppingCartPage(),
       },
     );
   }
@@ -581,7 +576,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
           ],
         ),
       ),
-      bottomNavigationBar: Container (
+      bottomNavigationBar: Container(
         color: Color(0xFF1B3C3D),
         height: 50,
         child: Row(
@@ -651,15 +646,15 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                     ),
                   ],
                 ),
-                child: IconButton(
-                  iconSize: 20.0, // Same smaller icon size
-                  icon: Image.asset(
-                    'assets/images/bottommenuicon.png', // Add your image path here
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/menu');
-                  },
-                ),
+                //child: IconButton (
+                 // iconSize: 20.0, // Same smaller icon size
+                  //icon: Image.asset(
+                  //  'assets/images/bottommenuicon.png', // Add your image path here
+                  //),
+                 // onPressed: () {
+
+                 // },
+              //  ),
               ),
             ),
           ],
@@ -702,6 +697,7 @@ class MenuPage extends StatefulWidget {
 
 class _MenuPageState extends State<MenuPage> {
   bool isVeg = true;
+  bool isLiked=true;
   String vegStatus = 'Veg';
   String selectedMealType = '';
   Map<String, bool> mealSelections = {
@@ -745,8 +741,7 @@ class _MenuPageState extends State<MenuPage> {
                   'description': doc['description'],
                   'isveg': doc['isveg'],
                   'small': doc['small'],
-                  'medium': doc['medium'],
-                  'documentId': doc.id, // Add documentId for navigation
+                  'medium': doc['medium']// Small price as number
                 })
                     .where((item) => isVeg ? item['isveg'] == true : item['isveg'] == false)
                     .toList();
@@ -794,7 +789,7 @@ class _MenuPageState extends State<MenuPage> {
         title: Center(
           child: Image.asset(
             'assets/images/MenuVistaicon.png',
-            height: 50,
+            height: 100,
             width: 200,
           ),
         ),
@@ -845,7 +840,7 @@ class _MenuPageState extends State<MenuPage> {
               SizedBox(height: 10),
 
               // Veg/Non-Veg Toggle
-              Row(
+              Row (
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -857,6 +852,7 @@ class _MenuPageState extends State<MenuPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
                   Switch(
                     value: isVeg,
                     onChanged: (value) {
@@ -880,87 +876,45 @@ class _MenuPageState extends State<MenuPage> {
           ),
         ),
       ),
-      bottomNavigationBar: Container (
+      bottomNavigationBar: Container(
         color: Color(0xFF1B3C3D),
         height: 50,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            // Profile Button
             Flexible(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFF1B3C3D),
-                  borderRadius: BorderRadius.circular(2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black45,
-                      offset: Offset(1, 1), // Smaller shadow
-                      blurRadius: 1.0,
-                    ),
-                  ],
+              child: IconButton(
+                iconSize: 20.0,
+                icon: Image.asset(
+                  'assets/images/profileicon.png',
                 ),
-                child: IconButton(
-                  iconSize: 20.0, // Smaller icon size to fit better
-                  icon: Image.asset(
-                    'assets/images/profileicon.png', // Add your image path here
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/profile');
-                  },
-                ),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/profile');
+                },
               ),
             ),
-            // Shopping Cart Button
             Flexible(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFF1B3C3D),
-                  borderRadius: BorderRadius.circular(2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black45,
-                      offset: Offset(1, 1),
-                      blurRadius: 1.0,
-                    ),
-                  ],
+              child: IconButton(
+                iconSize: 20.0,
+                icon: Image.asset(
+                  'assets/images/shoppingcarticon.png',
                 ),
-                child: IconButton(
-                  iconSize: 20.0, // Same smaller icon size
-                  icon: Image.asset(
-                    'assets/images/shoppingcarticon.png', // Add your image path here
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/cart');
-                  },
-                ),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/cart');
+                },
               ),
             ),
-            // Menu Button
-            Flexible(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFF1B3C3D),
-                  borderRadius: BorderRadius.circular(2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black45,
-                      offset: Offset(1, 1),
-                      blurRadius: 1.0,
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  iconSize: 20.0, // Same smaller icon size
-                  icon: Image.asset(
-                    'assets/images/bottommenuicon.png', // Add your image path here
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/menu');
-                  },
-                ),
-              ),
-            ),
+            //Flexible(
+              //child: IconButton(
+                //iconSize: 20.0,
+                //icon: Image.asset(
+                  //'assets/images/bottommenuicon.png',
+                //),
+               // onPressed: () {
+                 // Navigator.pushNamed(context, '/menu');
+               // },
+             // ),
+            //),
           ],
         ),
       ),
@@ -974,7 +928,7 @@ class _MenuPageState extends State<MenuPage> {
         backgroundColor: isSelected ? Color(0xFF3CC2C6) : Color(0xFF1B3C3D),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-        minimumSize: Size(20, 40),
+        minimumSize: Size(20,40),
       ),
       onPressed: () {
         setState(() {
@@ -1003,8 +957,7 @@ class _MenuPageState extends State<MenuPage> {
         name: item['itemname'],
         description: item['description'],
         smallPrice: item['small'],
-        mediumPrice: item['medium'],
-        documentId: item['documentId'], // Pass documentId to _buildMenuItem
+        mediumPrice: item['medium']// Fetch small price as a number
       );
     }).toList();
   }
@@ -1014,126 +967,115 @@ class _MenuPageState extends State<MenuPage> {
     required String name,
     required String description,
     required num smallPrice,
-    required num mediumPrice, // Accept medium price as a number
-    required String documentId, // Add document ID for the item
+    required num mediumPrice// Accept small price as a number
   }) {
-    return GestureDetector(
-      onTap: () {
-        // Navigate to the ItemPage and pass Rid and documentId
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ItemPage(
-              restaurantId: "PR5Gs3rUuEvPK6HvCZcl", // Pass the Rid from the current MenuPage
-              itemId: documentId, // Pass the documentId of the selected item
+    bool isLiked = false; // State for heart icon
+
+    return Container (
+      margin: EdgeInsets.only(bottom: 10.0),
+      padding: EdgeInsets.all(8.0),
+      width: 500,
+      height: 125,
+      decoration: BoxDecoration(
+        color: Color(0xFFFFDE59),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5.0, spreadRadius: 2.0)],
+      ),
+      child: Stack(
+          children: [
+      Row (
+      children: [
+      //ClipRRect(
+     // borderRadius: BorderRadius.circular(15),
+     // child: Image.network(imageUrl, height:5, width:5, fit: BoxFit.cover),
+    //),
+        SizedBox(
+          height: 100, // Adjust the height
+          width: 50,  // Adjust the width
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(15),
+            child: Image.network(
+              imageUrl,
+              fit: BoxFit.cover, // This will ensure the image fills the available space
             ),
           ),
-        );
-      },
-      child: Container(
-        margin: EdgeInsets.only(bottom: 10.0),
-        padding: EdgeInsets.all(8.0),
-        width: 500,
-        height: 125,
-        decoration: BoxDecoration(
-          color: Color(0xFFFFDE59),
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5.0, spreadRadius: 2.0)],
         ),
-        child: Stack(
-          children: [
-            Row(
-              children: [
-                SizedBox(
-                  height: 100, // Adjust the height
-                  width: 50,  // Adjust the width
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: /*Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover, // This will ensure the image fills the available space
-                    ),*/Image.asset(
-                      'assets/images/fries.png',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                SizedBox(width: 5),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(name, style: TextStyle(fontFamily: 'Oswald', fontSize: 16, fontWeight: FontWeight.bold)),
-                      Text(description, style: TextStyle(fontSize: 12)),
-                      SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              _buildSizeButton('Small'), // Pass small price
-                              SizedBox(width: 5),
-                              _buildSizeButton('Medium'), // Implement similar for Medium
-                              SizedBox(width: 5),
-                              _buildSizeButton('Large'), // Implement similar for Large
-                            ],
-                          ),
-                          // Display small price at the bottom right
-                          Container(
-                            padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                            decoration: BoxDecoration(
-                              color: Color(0xFF1B3C3D),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min, // Make the row take only the necessary space
-                              children: [
-                                Text(
-                                  'Rs $smallPrice',
-                                  style: TextStyle(
-                                    fontFamily: 'Oswald',
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+    SizedBox(width: 5),
+    Expanded(
+    child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+    Text(name, style: TextStyle(fontFamily: 'Oswald', fontSize: 16, fontWeight: FontWeight.bold)),
+    Text(description, style: TextStyle(fontSize: 12)),
+    SizedBox(height: 10),
+    Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+    Row(
+    children: [
+    _buildSizeButton('Small'), // Pass small price
+    SizedBox(width: 1),
+    _buildSizeButton('Medium'), // Implement similar for Medium
+    SizedBox(width: 1),
+    _buildSizeButton('Large'),// Implement similar for Large
+               ],
+    ),
+    // Display small price at the bottom right
+    Container(
+    padding: EdgeInsets.symmetric(vertical:8, horizontal: 8),
+    decoration: BoxDecoration(
+    color: Color(0xFF1B3C3D),
+    borderRadius: BorderRadius.circular(20),
+    ),
+    child: Row(
+    mainAxisSize: MainAxisSize.min, // Make the row take only the necessary space
+    children: [
+    Text(
+    'Rs $smallPrice',
+    style: TextStyle(
+    fontFamily: 'Oswald',
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+    ),
+    ),
+    ],
+    ),
+    ),
+    ],
+    ),
+    ],
+    ),
+    ),
+    ],
+    ),
+    // Positioned for the heart icon at the top-right corner
+    ],
+    ),
     );
   }
-
   Widget _buildSizeButton(String size) {
-    return ElevatedButton(
-      onPressed: () {},
-      style: ElevatedButton.styleFrom(
+    return OutlinedButton(
+      style: OutlinedButton.styleFrom(
         backgroundColor: Color(0xFF1B3C3D),
-        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-      child: Text(
-        size,
-        style: TextStyle(
-          fontFamily: 'Oswald',
-          fontSize: 10,
-          color: Colors.black,
-          fontWeight: FontWeight.bold,
+        padding: EdgeInsets.symmetric(vertical:5, horizontal:5), // Adjust padding for smaller button
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          // Modify the size here
         ),
+        minimumSize: Size(50,25), // Set a smaller minimum size
+      ),
+      onPressed: () {
+        // Action for button press
+      },
+      child: Text(
+        '$size',
+        style: TextStyle(color: Colors.white, fontSize: 8),
       ),
     );
   }
-}
 
+}
 
 
 class ProfilePage extends StatelessWidget {
@@ -1158,1177 +1100,28 @@ class ProfilePage extends StatelessWidget {
   }
 }
 
-class ItemPage extends StatefulWidget {
-  final String restaurantId;
-  final String itemId;
-
-  ItemPage({required this.restaurantId, required this.itemId});
-
-  @override
-  _ItemPageState createState() => _ItemPageState();
-}
-
-class _ItemPageState extends State<ItemPage> {
-  Map<String, dynamic>? itemData; // To store fetched item details
-  String selectedSize = 'Medium';
-  int price = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchItemDetails();
-  }
-
-  // Fetch item details from Firestore
-  void _fetchItemDetails() async {
-    DocumentSnapshot snapshot = await FirebaseFirestore.instance
-        .collection('restaurant')
-        .doc(widget.restaurantId)
-        .collection('menuItems')
-        .doc('MealTypes') // Assuming MealTypes is a single doc, you can adjust if needed
-        .collection('snacks')
-        .doc(widget.itemId)
-        .get();
-
-    if (snapshot.exists) {
-      setState(() {
-        itemData = snapshot.data() as Map<String, dynamic>;
-        price = itemData!['medium']; // Set initial price to medium
-      });
-    }
-  }
-
-  // Update price based on selected size
-  void _updatePrice(String size) {
-    setState(() {
-      selectedSize = size; // Update selected size
-      // Update price based on selected size
-      if (size == 'Small') {
-        price = itemData!['small'];
-      } else if (size == 'Medium') {
-        price = itemData!['medium'];
-      } else if (size == 'Large') {
-        price = itemData!['large'];
-      }
-    });
-  }
-
-  // Function to add to cart (implementation can vary)
-  void _addToCart() {
-    // Add the selected item to the cart
-    // You can implement your add to cart logic here
-    print('Added to cart: ${itemData!['itemname']} - Size: $selectedSize - Price: Rs $price');
-    // Show confirmation (optional)
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${itemData!['itemname']} added to cart! Size: $selectedSize', style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),),
-        backgroundColor: Color(0xFFFFDE59),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (itemData == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Loading...'),
-        ),
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-    return Scaffold(
-      backgroundColor: Color(0xFFEAFCFA),
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Color(0xFF1B3C3D),
-        leading: IconButton(
-          icon: Icon(Icons.settings, color: Colors.white),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => UnderConstructionPage(),
-              ),
-            );
-          },
-        ),
-        title: Center(
-          child: Image.asset(
-            'assets/images/MenuVistaicon.png',
-            height: 50,
-            width: 200,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Image.asset(
-              'assets/images/topmenuicon.png',
-              height: 50,
-              width: 50,
-            ),
-            onPressed: () {
-              // Currently does nothing, it's a blank space
-            },
-          ),
-        ],
-      ),
-
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Item image
-            Center(
-              child: Container(
-                padding: const EdgeInsets.all(0.0),
-                width: 500,
-                height: 250,
-                child: Image.asset(
-                  'assets/images/fries.png',
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-
-            SizedBox(height: 10),
-
-            // Item name in bold
-            Text(
-              itemData!['itemname'],
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-
-            // Box for description, size selection and buttons
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Color(0xFF1B3C3D),
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.5),
-                    blurRadius: 5,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Description header
-                  Text(
-                    'Description',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                  SizedBox(height: 5),
-
-                  // Item description with smaller font
-                  Text(
-                    itemData!['description'],
-                    style: TextStyle(fontSize: 14, color: Color.fromARGB(255, 255, 255, 255)), // Smaller font for description
-                  ),
-                  SizedBox(height: 10),
-
-                  // Size selection buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _sizeOption('Small'),
-                      _sizeOption('Medium'),
-                      _sizeOption('Large'),
-                    ],
-                  ),
-                  SizedBox(height: 10),
-
-                  // Price display
-                  Center(
-                    child: Text(
-                      'Price: Rs $price',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: const Color.fromARGB(255, 255, 255, 255)),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-
-                  // Customization button
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => UnderConstructionPage(),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            'Customize',
-                            style: TextStyle(fontSize: 15, color: Colors.black, fontWeight: FontWeight.bold),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFFFFDE59),
-                            padding: EdgeInsets.symmetric(vertical: 10),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            side: BorderSide(color: Color(0xFF1B3C3D), width: 3),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 10),
-                      // Rating and Reviews Button
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ReviewPage(restaurantId: widget.restaurantId, itemId: widget.itemId),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            'Ratings',
-                            style: TextStyle(fontSize: 15, color: Colors.black, fontWeight: FontWeight.bold),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFFFFDE59),
-                            padding: EdgeInsets.symmetric(vertical: 10),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            side: BorderSide(color: Color(0xFF1B3C3D), width: 3),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10),
-                  // Add to Cart Button
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CartPage(restaurantId:"PR5Gs3rUuEvPK6HvCZcl", itemId: "2001",),
-                        ),
-                      ); // Directly add to cart
-                    },
-                    child: Text(
-                      'Add to Cart',
-                      style: TextStyle(fontSize: 15, color: Colors.black, fontWeight: FontWeight.bold),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFFFDE59),
-                      padding: EdgeInsets.symmetric(vertical: 15, horizontal: 142),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      side: BorderSide(color: Color(0xFF1B3C3D), width: 3),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Container (
-        color: Color(0xFF1B3C3D),
-        height: 50,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            // Profile Button
-            Flexible(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFF1B3C3D),
-                  borderRadius: BorderRadius.circular(2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black45,
-                      offset: Offset(1, 1), // Smaller shadow
-                      blurRadius: 1.0,
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  iconSize: 20.0, // Smaller icon size to fit better
-                  icon: Image.asset(
-                    'assets/images/profileicon.png', // Add your image path here
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/profile');
-                  },
-                ),
-              ),
-            ),
-            // Shopping Cart Button
-            Flexible(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFF1B3C3D),
-                  borderRadius: BorderRadius.circular(2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black45,
-                      offset: Offset(1, 1),
-                      blurRadius: 1.0,
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  iconSize: 20.0, // Same smaller icon size
-                  icon: Image.asset(
-                    'assets/images/shoppingcarticon.png', // Add your image path here
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/cart');
-                  },
-                ),
-              ),
-            ),
-            // Menu Button
-            Flexible(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFF1B3C3D),
-                  borderRadius: BorderRadius.circular(2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black45,
-                      offset: Offset(1, 1),
-                      blurRadius: 1.0,
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  iconSize: 20.0, // Same smaller icon size
-                  icon: Image.asset(
-                    'assets/images/bottommenuicon.png', // Add your image path here
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/menu');
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Widget to display the size options
-  Widget _sizeOption(String size) {
-    bool isSelected = selectedSize == size; // Check if this size is selected
-    return GestureDetector(
-      onTap: () {
-        _updatePrice(size); // Update price when the option is tapped
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        margin: EdgeInsets.only(right: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(5),
-          color: isSelected ? Color.fromARGB(255, 161, 140, 57) : Color(0xFFFFDE59), // Change to orange if selected, yellow otherwise
-        ),
-        width: 100, // Increased width
-        child: Center(
-          child: Text(
-            size,
-            style: TextStyle(color: isSelected ? Colors.white : Colors.black), // Change text color based on selection
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-
-
-
-
-class ReviewPage extends StatefulWidget {
-  final String restaurantId;
-  final String itemId;
-
-  ReviewPage({required this.restaurantId, required this.itemId});
-
-  @override
-  _ReviewPageState createState() => _ReviewPageState();
-}
-
-class _ReviewPageState extends State<ReviewPage> {
-  String reviewText = '';
-  int rating = 0;
-  String username = 'Anonymous'; // Default username, can be dynamic if needed.
-  double averageRating = 0.0; // To store the average rating.
-
-  @override
-  void initState() {
-    super.initState();
-    _calculateAverageRating();
-    _fetchUsername(); // Fetch username on initialization.
-  }
-
-  void _fetchUsername() async {
-    User? user = FirebaseAuth.instance.currentUser; // Get the currently logged-in user
-
-    if (user != null) {
-      setState(() {
-        username = user.displayName ?? user.email ?? 'Anonymous'; // Get the user's display name, email, or fallback to 'Anonymous'
-      });
-    }
-  }
-
-  // Calculate the average rating for the item.
-  void _calculateAverageRating() async {
-    QuerySnapshot reviewSnapshot = await FirebaseFirestore.instance
-        .collection('reviews')
-        .doc(widget.itemId)
-        .collection('userreviews')
-        .get();
-
-    if (reviewSnapshot.docs.isNotEmpty) {
-      double totalRating = 0;
-      reviewSnapshot.docs.forEach((doc) {
-        var reviewData = doc.data() as Map<String, dynamic>;
-        totalRating += reviewData['rating'];
-      });
-
-      setState(() {
-        averageRating = totalRating / reviewSnapshot.size;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFFEAFCFA),
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Color(0xFF1B3C3D),
-        leading: IconButton(
-          icon: Icon(Icons.settings, color: Colors.white),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => UnderConstructionPage(),
-              ),
-            );
-          },
-        ),
-        title: Center(
-          child: Image.asset(
-            'assets/images/MenuVistaicon.png',
-            height: 50,
-            width: 200,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Image.asset(
-              'assets/images/topmenuicon.png',
-              height: 50,
-              width: 50,
-            ),
-            onPressed: () {
-              // Currently does nothing, it's a blank space
-            },
-          ),
-        ],
-      ),
-      body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance
-            .collection('restaurant')
-            .doc(widget.restaurantId)
-            .collection('menuItems')
-            .doc('MealTypes')
-            .collection('snacks')
-            .doc(widget.itemId)
-            .get(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
-          }
-
-          if (!snapshot.data!.exists) {
-            return Center(child: Text('Item not found.'));
-          }
-
-          var item = snapshot.data!.data() as Map<String, dynamic>?;
-
-          if (item == null) {
-            return Center(child: Text('No data available for this item.'));
-          }
-
-          return Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Image.asset(
-                        'assets/images/fries.png',
-                        fit: BoxFit.cover,
-                        width: double.infinity, // Fit the image to the full width of the screen.
-                      ),
-                      SizedBox(height: 16),
-                      Text(item['itemname'], style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                      SizedBox(height: 8),
-                      Text(item['description'], style: TextStyle(fontSize: 16)),
-                      SizedBox(height: 16),
-                      // Display the average rating as stars
-                      Row(
-                        children: [
-                          Text('Average Rating: ', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                          Row(
-                            children: List.generate(5, (index) {
-                              return Icon(
-                                index < averageRating ? Icons.star : Icons.star_border,
-                                color: Colors.amber,
-                              );
-                            }),
-                          ),
-                          SizedBox(width: 8),
-                          Text(averageRating.toStringAsFixed(1), style: TextStyle(fontSize: 16)),
-                        ],
-                      ),
-                      SizedBox(height: 16),
-                      Text('Customer Reviews', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-
-                      // Reviews Box with Dark Background
-                      Container( // Dark background for customer reviews section
-                        decoration: BoxDecoration(
-                          color: const Color.fromARGB(135, 20, 63, 68),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: EdgeInsets.all(8),
-                        child: _buildReviewsList(), // Customer reviews list
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Submit Review Section
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Add Your Review', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    SizedBox(height: 8),
-                    Container(
-                      color: Colors.white, // Change background color to white
-                      child: TextField(
-                        maxLines: 2, // Make the review input smaller
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          labelText: 'Write a review',
-                        ),
-                        onChanged: (text) {
-                          setState(() {
-                            reviewText = text;
-                          });
-                        },
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    _buildRatingBar(),
-                    SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed: _submitReview,
-                      child: Text('Submit Review', style: TextStyle(color: Colors.black)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFFFDE59),
-                        padding: EdgeInsets.symmetric(vertical: 15, horizontal: 142),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        side: BorderSide(color: Color(0xFF1B3C3D), width: 3),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-      bottomNavigationBar: Container (
-        color: Color(0xFF1B3C3D),
-        height: 50,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            // Profile Button
-            Flexible(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFF1B3C3D),
-                  borderRadius: BorderRadius.circular(2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black45,
-                      offset: Offset(1, 1), // Smaller shadow
-                      blurRadius: 1.0,
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  iconSize: 20.0, // Smaller icon size to fit better
-                  icon: Image.asset(
-                    'assets/images/profileicon.png', // Add your image path here
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/profile');
-                  },
-                ),
-              ),
-            ),
-            // Shopping Cart Button
-            Flexible(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFF1B3C3D),
-                  borderRadius: BorderRadius.circular(2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black45,
-                      offset: Offset(1, 1),
-                      blurRadius: 1.0,
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  iconSize: 20.0, // Same smaller icon size
-                  icon: Image.asset(
-                    'assets/images/shoppingcarticon.png', // Add your image path here
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/cart');
-                  },
-                ),
-              ),
-            ),
-            // Menu Button
-            Flexible(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFF1B3C3D),
-                  borderRadius: BorderRadius.circular(2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black45,
-                      offset: Offset(1, 1),
-                      blurRadius: 1.0,
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  iconSize: 20.0, // Same smaller icon size
-                  icon: Image.asset(
-                    'assets/images/bottommenuicon.png', // Add your image path here
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/menu');
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-
-    );
-  }
-
-  Widget _buildReviewsList() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('reviews')
-          .doc(widget.itemId)
-          .collection('userreviews')
-          .orderBy('timestamp', descending: true)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return Center(child: CircularProgressIndicator());
-        }
-
-        var reviews = snapshot.data!.docs;
-
-        if (reviews.isEmpty) {
-          return Text('No reviews yet', style: TextStyle(color: Colors.white)); // Change text color to white for visibility.
-        }
-
-        return ListView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          itemCount: reviews.length,
-          itemBuilder: (context, index) {
-            var review = reviews[index].data() as Map<String, dynamic>;
-            return ListTile(
-              title: Row(
-                children: [
-                  Text(review['username'], style: TextStyle(color: Colors.white)), // Change text color to white.
-                  SizedBox(width: 8),
-                  Row(
-                    children: List.generate(5, (i) => Icon(
-                      i < review['rating'] ? Icons.star : Icons.star_border,
-                      color: Colors.amber,
-                      size: 16,
-                    )),
-                  ),
-                ],
-              ),
-              subtitle: Text(review['review'], style: TextStyle(color: Colors.white)), // Change text color to white.
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildRatingBar() {
-    return Row(
-      children: List.generate(5, (index) {
-        return IconButton(
-          icon: Icon(
-            index < rating ? Icons.star : Icons.star_border,
-            color: Colors.amber,
-          ),
-          onPressed: () {
-            setState(() {
-              rating = index + 1;
-            });
-          },
-        );
-      }),
-    );
-  }
-
-  void _submitReview() {
-    if (reviewText.isNotEmpty && rating > 0) {
-      // Create a new review document with a unique ID
-      FirebaseFirestore.instance
-          .collection('reviews')
-          .doc(widget.itemId)
-          .collection('userreviews')
-          .add({ // Use add() to automatically generate a unique document ID
-        'username': username, // Use the dynamically fetched username
-        'review': reviewText,
-        'rating': rating,
-        'timestamp': FieldValue.serverTimestamp(),
-      }).then((_) {
-        // Successfully added review
-        setState(() {
-          reviewText = '';
-          rating = 0;
-        });
-
-        // Recalculate average rating after submitting the review.
-        _calculateAverageRating();
-      }).catchError((error) {
-        // Handle any errors that occur during submission
-        print("Failed to add review: $error");
-      });
-    }
-  }
-}
-
-
-
-// CartPage class updated to be StatefulWidget
-class CartPage extends StatefulWidget {
-  final String itemId;  // Accept itemId as a parameter
-  final String restaurantId; // Also accept restaurantId as a parameter
-
-  CartPage({required this.itemId, required this.restaurantId});  // Constructor to initialize itemId and restaurantId
-
-  @override
-  _CartPageState createState() => _CartPageState();
-}
-
-class _CartPageState extends State<CartPage> {
-  final CollectionReference cartCollection = FirebaseFirestore.instance.collection('cart');
-
+class ShoppingCartPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.teal[900],
-        title: Text('Foodico', style: TextStyle(fontSize: 24)),
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.settings),
-          onPressed: () {}, // Handle settings action
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.restaurant_menu),
-            onPressed: () {}, // Handle restaurant menu action
-          ),
-        ],
+        title: Text('Shopping Cart'),
+        backgroundColor: Colors.black,
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: cartCollection.snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          if (snapshot.data!.docs.isEmpty) {
-            return Center(child: Text('Your cart is currently empty'));
-          }
-
-          final cartItems = snapshot.data!.docs;
-
-          return Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  itemCount: cartItems.length,
-                  itemBuilder: (context, index) {
-                    var cartItem = cartItems[index].data() as Map<String, dynamic>;
-                    var cartItemId = cartItems[index].id;
-
-                    // Fetch the actual item name using the passed widget.itemId
-                    return FutureBuilder<DocumentSnapshot>(
-                      future: FirebaseFirestore.instance
-                          .collection('restaurant')
-                          .doc(widget.restaurantId)
-                          .collection('menuItems')
-                          .doc('MealTypes') // Assuming MealTypes is a single doc, adjust if needed
-                          .collection('snacks')
-                          .doc(widget.itemId)
-                          .get(),
-                      builder: (context, itemSnapshot) {
-                        if (itemSnapshot.connectionState == ConnectionState.waiting) {
-                          return Center(child: CircularProgressIndicator());
-                        }
-                        if (itemSnapshot.hasError || !itemSnapshot.hasData || !itemSnapshot.data!.exists) {
-                          return Center(child: Text('Error loading item data'));
-                        }
-
-                        // Extract item data
-                        var itemData = itemSnapshot.data!.data() as Map<String, dynamic>;
-
-                        return Card(
-                          margin: EdgeInsets.all(8.0),
-                          child: ListTile(
-                            title: Text(itemData['itemname']), // Display the item name from Firestore
-                            subtitle: Text('Price: Rs ${cartItem['price']}'),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: Icon(Icons.remove),
-                                  onPressed: () {
-                                    _updateQuantity(cartItemId, cartItem['quantity'] - 1);
-                                  },
-                                ),
-                                Text('${cartItem['quantity']}'),
-                                IconButton(
-                                  icon: Icon(Icons.add),
-                                  onPressed: () {
-                                    _updateQuantity(cartItemId, cartItem['quantity'] + 1);
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-              _billDetails(cartItems),
-              _proceedToPayButton(cartItems),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  void _updateQuantity(String cartItemId, int newQuantity) {
-    if (newQuantity > 0) {
-      cartCollection.doc(cartItemId).update({'quantity': newQuantity});
-    } else {
-      cartCollection.doc(cartItemId).delete();
-    }
-  }
-
-  Widget _billDetails(List<QueryDocumentSnapshot> cartItems) {
-    double totalAmount = cartItems.fold(0.0, (sum, item) {
-      return sum + (item['price'] * item['quantity']);
-    });
-
-    double gst = totalAmount * 0.18;
-    double finalAmount = totalAmount + gst;
-
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
-        children: [
-          _billDetailRow('Item total', 'Rs ${totalAmount.toStringAsFixed(2)}'),
-          _billDetailRow('GST (18%)', 'Rs ${gst.toStringAsFixed(2)}'),
-          Divider(color: Colors.black),
-          _billDetailRow('Total to Pay', 'Rs ${finalAmount.toStringAsFixed(2)}', isBold: true),
-        ],
-      ),
-    );
-  }
-
-  Widget _billDetailRow(String title, String value, {bool isBold = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: TextStyle(fontSize: 16, fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
-          Text(value, style: TextStyle(fontSize: 16, fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
-        ],
-      ),
-    );
-  }
-
-  Widget _proceedToPayButton(List<QueryDocumentSnapshot> cartItems) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.yellow[600],
-        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-      ),
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PaymentPage(cartItems: cartItems),
-          ),
-        );
-      },
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('Proceed To Pay', style: TextStyle(color: Colors.black, fontSize: 18)),
-        ],
-      ),
-    );
-  }
-}
-
-
-
-class PaymentPage extends StatefulWidget {
-  final List cartItems;
-
-  PaymentPage({required this.cartItems});
-
-  @override
-  _PaymentPageState createState() => _PaymentPageState();
-}
-
-class _PaymentPageState extends State<PaymentPage> {
-  String? selectedUpiApp;
-  String? selectedPaymentMethod;
-
-  // Total amount and final amount including GST calculation
-  late double totalAmount;
-  late double finalAmount;
-
-  @override
-  void initState() {
-    super.initState();
-    totalAmount = widget.cartItems.fold(0.0, (sum, item) {
-      return sum + (item['price'] * item['quantity']);
-    });
-    double gst = totalAmount * 0.18;
-    finalAmount = totalAmount + gst;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.teal[900],
-        title: Text('Foodico', style: TextStyle(fontSize: 24)),
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.settings),
-          onPressed: () {}, // Handle settings action
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.restaurant_menu),
-            onPressed: () {}, // Handle restaurant menu action
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Payment Options Header
-              Text(
-                'Payment Options',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text(
-                '${widget.cartItems.length} Items  :  Total Rs ${finalAmount.toStringAsFixed(2)}',
-                style: TextStyle(fontSize: 16),
-              ),
-              SizedBox(height: 20),
-
-              // Pay by an UPI App
-              Container(
-                color: Colors.yellow[100],
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Pay by an UPI App',
-                      style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Image.asset(
-                              'assets/images/Google-Symbol.png',
-                              // Add your Google Pay icon asset here
-                              height: 40,
-                              width: 40,
-                            ),
-                            SizedBox(width: 10),
-                            Text('Google Pay', style: TextStyle(fontSize: 16)),
-                          ],
-                        ),
-                        Radio<String>(
-                          value: 'google_pay',
-                          groupValue: selectedUpiApp,
-                          onChanged: (String? value) {
-                            setState(() {
-                              selectedUpiApp = value;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 10),
-                    TextButton.icon(
-                      onPressed: () {
-                        // Handle Add New UPI ID
-                      },
-                      icon: Icon(Icons.add, color: Colors.red),
-                      label: Text(
-                        'Add New UPI ID',
-                        style: TextStyle(color: Colors.red, fontSize: 16),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 20),
-
-              // More Payment Options
-              Text(
-                'More Payment Options',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 16),
-              _paymentOptionTile(
-                context,
-                icon: Icons.account_balance_wallet,
-                color: Colors.purple,
-                title: 'Wallets',
-              ),
-              _paymentOptionTile(
-                context,
-                icon: Icons.credit_card,
-                color: Colors.orange,
-                title: 'Netbanking',
-              ),
-              _paymentOptionTile(
-                context,
-                icon: Icons.money,
-                color: Colors.green,
-                title: 'Cash',
-              ),
-              _paymentOptionTile(
-                context,
-                icon: Icons.payment,
-                color: Colors.yellow,
-                title: 'Debit or Credit Card',
-              ),
-              SizedBox(height: 30),
-
-              // Proceed Button
-              ElevatedButton(
-                onPressed: () => UnderConstructionPage(),
-                //selectedUpiApp == 'google_pay'// Disable button if no UPI app is selected
-                child: Text(
-                    'Proceed to Pay Rs ${finalAmount.toStringAsFixed(2)}'),
-              ),
-            ],
+      body: Center(
+        child: Text(
+          'Under Construction',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.red,
           ),
         ),
       ),
     );
   }
-
-  Widget _paymentOptionTile(BuildContext context,
-      {required IconData icon, required Color color, required String title}) {
-    return ListTile(
-      leading: Icon(icon, color: color, size: 36),
-      title: Text(title, style: TextStyle(fontSize: 16)),
-      trailing: Radio<String>(
-        value: title,
-        groupValue: selectedPaymentMethod,
-        onChanged: (String? value) {
-          setState(() {
-            selectedPaymentMethod = value;
-          });
-        },
-      ),
-    );
-  }
-
-  // Function to launch Google Pay UPI intent
-  Future<void> _launchGPay(double amount) async {
-    // Encode the URL components properly
-    String upiUrl = Uri.encodeFull(
-        'upi://pay?pa=merchant@upi&pn=Merchant+Name&mc=1234&tid=T1234&tr=TXN1234&am=${amount.toStringAsFixed(2)}&cu=INR&url=https://ecomstore-six.vercel.app/cart/pay/66fc54341c829d82b4617440');
-
-    if (await canLaunch(upiUrl)) {
-      await launch(upiUrl);  // Launch UPI payment intent
-    } else {
-      throw 'Could not launch UPI URL';
-    }
-  }
 }
+
 
 
 class ForgotPasswordPage extends StatefulWidget {
