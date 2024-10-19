@@ -8,6 +8,7 @@ import 'AboutUsPage.dart';
 import 'ProfilePage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+
 class CartPage extends StatefulWidget {
   final String? userId; // Accept userId as a nullable parameter
   final String restaurantId; // Accept restaurantId as a nullable parameter
@@ -40,11 +41,7 @@ class _CartPageState extends State<CartPage> {
     super.initState();
     userCartRef = cartCollection.doc(widget.userId);
     itemsCollection = userCartRef.collection(widget.restaurantId); // Create a collection with restaurantId
-
-    // Only call _addItemToCart if itemId is not null
-    if (widget.itemId != null) {
-      _addItemToCart();
-    }
+    _addItemToCart(); // Call method to add item to cart
   }
 
   void _addItemToCart() async {
@@ -57,7 +54,7 @@ class _CartPageState extends State<CartPage> {
       await itemsCollection.doc(widget.itemId).set({
         'price': widget.price,
         'selectedSize': widget.selectedSize,
-        'itemName': itemName,
+        'itemName': await _fetchItemName(),
         'extraInstructions': widget.extraInstructions,
         'quantity': 1, // Initialize quantity to 1
       });
@@ -66,6 +63,9 @@ class _CartPageState extends State<CartPage> {
 
   Future<String> _fetchItemName() async {
     // List of subcollection names to search through
+    if (widget.itemId == null) {
+      return 'Unknown Item';
+    }
     List<String> subcollections = ['snacks', 'breakfast', 'lunch', 'dinner'];
 
     for (String subcollection in subcollections) {
@@ -87,241 +87,234 @@ class _CartPageState extends State<CartPage> {
     return 'Unknown Item';
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Color(0xFF1B3C3D),
-        leading: PopupMenuButton<String>(
-          icon: Icon(Icons.settings, color: Colors.white),
-          color: Color(0xFFEAFCFA),
-          itemBuilder: (BuildContext context) {
-            return [
-              PopupMenuItem<String>(
-                value: 'profile',
-                child: Row(
-                  children: [
-                    Icon(Icons.person, color: Colors.black),
-                    SizedBox(width: 8),
-                    Text(
-                      'Profile',
-                      style: TextStyle(color: Colors.black),
-                    ),
-                  ],
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Color(0xFF1B3C3D),
+          leading: PopupMenuButton<String>(
+            icon: Icon(Icons.settings, color: Colors.white),
+            color: Color(0xFFEAFCFA),
+            itemBuilder: (BuildContext context) {
+              return [
+                PopupMenuItem<String>(
+                  value: 'profile',
+                  child: Row(
+                    children: [
+                      Icon(Icons.person, color: Colors.black),
+                      SizedBox(width: 8),
+                      Text(
+                        'Profile',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              PopupMenuItem<String>(
-                value: 'order_history',
-                child: Row(
-                  children: [
-                    Icon(Icons.history, color: Colors.black),
-                    SizedBox(width: 8),
-                    Text(
-                      'Order History',
-                      style: TextStyle(color: Colors.black),
-                    ),
-                  ],
+                PopupMenuItem<String>(
+                  value: 'order_history',
+                  child: Row(
+                    children: [
+                      Icon(Icons.history, color: Colors.black),
+                      SizedBox(width: 8),
+                      Text(
+                        'Order History',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              PopupMenuItem<String>(
-                value: 'about_us',
-                child: Row(
-                  children: [
-                    Icon(Icons.info, color: Colors.black),
-                    SizedBox(width: 8),
-                    Text(
-                      'About Us',
-                      style: TextStyle(color: Colors.black),
-                    ),
-                  ],
+                PopupMenuItem<String>(
+                  value: 'about_us',
+                  child: Row(
+                    children: [
+                      Icon(Icons.info, color: Colors.black),
+                      SizedBox(width: 8),
+                      Text(
+                        'About Us',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              PopupMenuItem<String>(
-                value: 'logout',
-                child: Row(
-                  children: [
-                    Icon(Icons.logout, color: Colors.black),
-                    SizedBox(width: 8),
-                    Text(
-                      'Logout',
-                      style: TextStyle(color: Colors.black),
-                    ),
-                  ],
+                PopupMenuItem<String>(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, color: Colors.black),
+                      SizedBox(width: 8),
+                      Text(
+                        'Logout',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ];
-          },
-          onSelected: (String value) async {
-            String email = FirebaseAuth.instance.currentUser?.email ?? '';
+              ];
+            },
+            onSelected: (String value) async {
+              String email = FirebaseAuth.instance.currentUser?.email ?? '';
 
-            if (value == 'profile') {
-              if (email.isNotEmpty) {
-                QuerySnapshot userSnapshot = await FirebaseFirestore.instance
-                    .collection('users')
-                    .where('email', isEqualTo: email)
-                    .get();
+              if (value == 'profile') {
+                if (email.isNotEmpty) {
+                  QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+                      .collection('users')
+                      .where('email', isEqualTo: email)
+                      .get();
 
-                if (userSnapshot.docs.isNotEmpty) {
-                  String documentId = userSnapshot.docs.first.id;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ProfilePage(documentId: documentId),
-                    ),
-                  );
+                  if (userSnapshot.docs.isNotEmpty) {
+                    String documentId = userSnapshot.docs.first.id;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProfilePage(documentId: documentId),
+                      ),
+                    );
+                  } else {
+                    print('User document not found.');
+                  }
                 } else {
-                  print('User document not found.');
+                  print('No user is currently logged in.');
                 }
-              } else {
-                print('No user is currently logged in.');
-              }
-            } else if (value == 'order_history') {
-              if (email.isNotEmpty) {
-                QuerySnapshot userSnapshot = await FirebaseFirestore.instance
-                    .collection('users')
-                    .where('email', isEqualTo: email)
-                    .get();
+              } else if (value == 'order_history') {
+                if (email.isNotEmpty) {
+                  QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+                      .collection('users')
+                      .where('email', isEqualTo: email)
+                      .get();
 
-                if (userSnapshot.docs.isNotEmpty) {
-                  String documentId = userSnapshot.docs.first.id;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => OrderHistoryPage(documentId: documentId),
-                    ),
-                  );
-                } else {
-                  print('User document not found.');
+                  if (userSnapshot.docs.isNotEmpty) {
+                    String documentId = userSnapshot.docs.first.id;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OrderHistoryPage(documentId: documentId),
+                      ),
+                    );
+                  } else {
+                    print('User document not found.');
+                  }
                 }
+              } else if (value == 'logout') {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                      (route) => false,
+                );
+              } else if (value == 'about_us') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AboutUsPage(),
+                  ),
+                );
               }
-            } else if (value == 'logout') {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => LoginPage()),
-                    (route) => false,
-              );
-            } else if (value == 'about_us') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AboutUsPage(),
+            },
+          ),
+          title: Center(
+            child: Image.asset(
+              'assets/images/MenuVistaicon.png',
+              height: 50,
+              width: 200,
+            ),
+          ),
+          actions: [
+            IconButton(
+              icon: Image.asset(
+                'assets/images/topmenuicon.png',
+                height: 50,
+                width: 50,
+              ),
+              onPressed: () {},
+            ),
+          ],
+        ),
+        body: StreamBuilder<QuerySnapshot>(
+          stream: itemsCollection.snapshots(), // Listen to the specific restaurantId subcollection
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            }
+            if (snapshot.data!.docs.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/Empty-cart-1-512.png', // Replace with your image path
+                      height: 300, // Adjust height as needed
+                      width: 300, // Adjust width as needed
+                      fit: BoxFit.cover, // Adjust the box fit as needed
+                    ),
+                    SizedBox(height: 16), // Add some space between the image and text
+                    Text(
+                      'Your cart is currently empty',
+                      style: TextStyle(fontSize: 20), // Customize text style if needed
+                    ),
+                  ],
                 ),
               );
             }
+
+
+            final cartItems = snapshot.data!.docs;
+
+            return Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: cartItems.length,
+                    itemBuilder: (context, index) {
+                      var cartItem = cartItems[index].data() as Map<String, dynamic>;
+                      var cartItemId = cartItems[index].id;
+
+                      return Card(
+                        margin: EdgeInsets.all(8.0),
+                        child: ListTile(
+                          title: Text(cartItem['itemName']), // Display the item name from Firestore
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Price: Rs ${cartItem['price']}'),
+                              SizedBox(height: 4.0),
+                              Text('Size: ${cartItem['selectedSize']}'),
+                              SizedBox(height: 4.0),
+                              Text('Extra Instructions: ${cartItem['extraInstructions']}'),
+                            ],
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.remove),
+                                onPressed: () {
+                                  _updateQuantity(cartItemId, cartItem['quantity'] - 1);
+                                },
+                              ),
+                              Text('${cartItem['quantity']}'),
+                              IconButton(
+                                icon: Icon(Icons.add),
+                                onPressed: () {
+                                  _updateQuantity(cartItemId, cartItem['quantity'] + 1);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                _billDetails(cartItems),
+                _proceedToPayButton(cartItems),
+              ],
+            );
           },
         ),
-        title: Center(
-          child: Image.asset(
-            'assets/images/MenuVistaicon.png',
-            height: 50,
-            width: 200,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Image.asset(
-              'assets/images/topmenuicon.png',
-              height: 50,
-              width: 50,
-            ),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: itemsCollection.snapshots(), // Listen to the specific restaurantId subcollection
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          if (snapshot.data!.docs.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/images/Empty-cart-1-512.png', // Replace with your image path
-                    height: 300, // Adjust height as needed
-                    width: 300, // Adjust width as needed
-                    fit: BoxFit.cover, // Adjust the box fit as needed
-                  ),
-                  SizedBox(height: 16), // Add some space between the image and text
-                  Text(
-                    'Your cart is currently empty',
-                    style: TextStyle(fontSize: 20), // Customize text style if needed
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final cartItems = snapshot.data!.docs;
-
-          return Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  itemCount: cartItems.length,
-                  itemBuilder: (context, index) {
-                    var cartItem = cartItems[index].data() as Map<String, dynamic>;
-                    var cartItemId = cartItems[index].id;
-
-                    return Card(
-                      margin: EdgeInsets.all(8.0),
-                      child: ListTile(
-                        title: Text(cartItem['itemName']), // Display the item name from Firestore
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Price: Rs ${cartItem['price']}'),
-                            SizedBox(height: 4.0),
-                            Text('Size: ${cartItem['selectedSize']}'),
-                            SizedBox(height: 4.0),
-                            Text('Extra Instructions: ${cartItem['extraInstructions']}'),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.remove),
-                              onPressed: () {
-                                _decreaseQuantity(cartItemId, cartItem);
-                              },
-                            ),
-                            Text(cartItem['quantity'].toString()), // Display item quantity
-                            IconButton(
-                              icon: Icon(Icons.add),
-                              onPressed: () {
-                                _increaseQuantity(cartItemId, cartItem);
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                 // Navigator.push(
-                    //context,
-                    //MaterialPageRoute(
-                     // builder: (context) => PaymentPage(userId: widget.userId),
-                   // ),
-                 // );
-                },
-                child: Text('Proceed to Payment'),
-              ),
-            ],
-          );
-        },
-      ),
         bottomNavigationBar: Container(
           color: Color(0xFF1B3C3D),
           height: 50,
@@ -378,7 +371,7 @@ class _CartPageState extends State<CartPage> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => MenuPage(
+                        MaterialPageRoute(builder: (context) => MenuPage(// Pass the documentId as userId
                           Rid: widget.restaurantId,
                         )), // Replace with the correct page
                       );
@@ -392,17 +385,68 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  void _increaseQuantity(String itemId, Map<String, dynamic> cartItem) async {
-    int currentQuantity = cartItem['quantity'] ?? 1;
-    await itemsCollection.doc(itemId).update({'quantity': currentQuantity + 1});
+  void _updateQuantity(String cartItemId, int newQuantity) {
+    if (newQuantity > 0) {
+      itemsCollection.doc(cartItemId).update({'quantity': newQuantity});
+    } else {
+      itemsCollection.doc(cartItemId).delete();
+    }
   }
 
-  void _decreaseQuantity(String itemId, Map<String, dynamic> cartItem) async {
-    int currentQuantity = cartItem['quantity'] ?? 1;
-    if (currentQuantity > 1) {
-      await itemsCollection.doc(itemId).update({'quantity': currentQuantity - 1});
-    } else {
-      await itemsCollection.doc(itemId).delete(); // Remove the item if quantity is 1 and user wants to decrease
-    }
+  Widget _billDetails(List<QueryDocumentSnapshot> cartItems) {
+    double totalAmount = cartItems.fold(0.0, (sum, item) {
+      return sum + (item['price'] * item['quantity']);
+    });
+
+    double gst = totalAmount * 0.18;
+    double finalAmount = totalAmount + gst;
+
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        children: [
+          _billDetailRow('Item total', 'Rs ${totalAmount.toStringAsFixed(2)}'),
+          _billDetailRow('GST (18%)', 'Rs ${gst.toStringAsFixed(2)}'),
+          Divider(color: Colors.black),
+          _billDetailRow('Total to Pay', 'Rs ${finalAmount.toStringAsFixed(2)}', isBold: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _billDetailRow(String title, String value, {bool isBold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: TextStyle(fontSize: 16, fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
+          Text(value, style: TextStyle(fontSize: 16, fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
+        ],
+      ),
+    );
+  }
+
+  Widget _proceedToPayButton(List<QueryDocumentSnapshot> cartItems) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.yellow[600],
+        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+      ),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentPage(cartItems: cartItems),
+          ),
+        );
+      },
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('Proceed To Pay', style: TextStyle(color: Colors.black, fontSize: 18)),
+        ],
+      ),
+    );
   }
 }
