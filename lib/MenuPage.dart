@@ -188,6 +188,7 @@ class _MenuPageState extends State<MenuPage> {
             final mealCollectionSnapshot = await mealTypesRef.collection(mealType)
                 .where('itemname', isGreaterThanOrEqualTo: query)
                 .where('itemname', isLessThanOrEqualTo: query + '\uf8ff')  // Perform search
+                .where('isveg', isEqualTo: isVeg)  // Filter based on veg/non-veg toggle
                 .get();
 
             if (mealCollectionSnapshot.docs.isNotEmpty) {
@@ -228,6 +229,7 @@ class _MenuPageState extends State<MenuPage> {
       print('Error searching for items: $e');
     }
   }
+
 
 
   String capitalize(String s) => s[0].toUpperCase() + s.substring(1);
@@ -449,7 +451,7 @@ class _MenuPageState extends State<MenuPage> {
                             setState(() {
                               isVeg = value;
                               vegStatus = isVeg ? 'Veg' : 'Non-Veg';
-                              fetchMenuData(); // Fetch data again based on new selection
+                              fetchMenuData();// Fetch data again based on new selection
                             });
                           },
                           activeColor: Colors.green,
@@ -530,10 +532,10 @@ class _MenuPageState extends State<MenuPage> {
                         MaterialPageRoute(builder: (context) => CartPage(
                           userId: documentId,           // Pass the documentId as userId
                           restaurantId: widget.Rid,
-                          itemId: ' ',      // Include other required parameters as needed
-                          selectedSize: ' ',
+                          itemId: null,      // Include other required parameters as needed
+                          selectedSize: null,
                           price: 0,
-                          extraInstructions: ' ',
+                          extraInstructions: null,
                         )), // Replace with the correct page
                       );
                     },

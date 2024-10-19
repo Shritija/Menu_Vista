@@ -81,7 +81,7 @@ flutter:
     - assets/images/icon.png
     - assets/images/Empty-cart-1-512.png
     - assets/images/image_processing20200705-25128-1a0u0wj.gif
-    - assets/images/not found.png
+    - assets/images/notfound.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

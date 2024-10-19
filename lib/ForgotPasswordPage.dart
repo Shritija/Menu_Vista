@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 
-
 class ForgotPasswordPage extends StatefulWidget {
   @override
   _ForgotPasswordPageState createState() => _ForgotPasswordPageState();
@@ -20,16 +19,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       List<String> signInMethods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
       print("$email");
       print("$signInMethods");
-      if (signInMethods.isNotEmpty) {
+      if (signInMethods.isEmpty) {
         setState(() {
           message = 'No user found for that email.';
         });
-        return;
-
-        // ignore: dead_code
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('This email is not registered.'), backgroundColor: Colors.red),
-        );
         return;
       }
 
@@ -70,62 +63,64 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         iconTheme: IconThemeData(color: Color.fromARGB(255, 255, 222, 89)),
         backgroundColor: Color.fromARGB(255, 0, 0, 0),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Image.asset(
-              'assets/images/unnamed.png', // Replace with your logo file path
-              height: 250,
-              width: 250,
-            ),
-            TextField(
-              controller: emailController,
-              decoration: InputDecoration(
-                labelText: 'Enter your email',
-                labelStyle: TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
-                floatingLabelStyle: TextStyle(
-                  color: Color.fromARGB(255, 255, 222, 89),
-                  shadows: [
-                    Shadow(
-                      color: Colors.black,
-                      offset: Offset(2.0, 2.0),
-                      blurRadius: 1.0,
-                    )
-                  ],
-                ),
-                hintText: 'Email',
-                filled: true,
-                fillColor: Color.fromARGB(255, 206, 206, 206),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
+      body: SingleChildScrollView( // Make the content scrollable
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Image.asset(
+                'assets/images/unnamed.png', // Replace with your logo file path
+                height: 250,
+                width: 250,
+              ),
+              TextField(
+                controller: emailController,
+                decoration: InputDecoration(
+                  labelText: 'Enter your email',
+                  labelStyle: TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+                  floatingLabelStyle: TextStyle(
                     color: Color.fromARGB(255, 255, 222, 89),
-                    width: 2.0,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black,
+                        offset: Offset(2.0, 2.0),
+                        blurRadius: 1.0,
+                      )
+                    ],
+                  ),
+                  hintText: 'Email',
+                  filled: true,
+                  fillColor: Color.fromARGB(255, 206, 206, 206),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Color.fromARGB(255, 255, 222, 89),
+                      width: 2.0,
+                    ),
                   ),
                 ),
               ),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: sendPasswordResetEmail,
-              child: Text('Send Password Reset Link', style: TextStyle(
-                color: const Color.fromARGB(255, 0, 0, 0),
-                fontFamily: 'Oswald',
-                fontWeight: FontWeight.bold,
-              )),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color.fromARGB(255, 255, 222, 89),
-                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: sendPasswordResetEmail,
+                child: Text('Send Password Reset Link', style: TextStyle(
+                  color: const Color.fromARGB(255, 0, 0, 0),
+                  fontFamily: 'Oswald',
+                  fontWeight: FontWeight.bold,
+                )),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color.fromARGB(255, 255, 222, 89),
+                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                ),
               ),
-            ),
-            SizedBox(height: 20),
-            Text(
-              message,
-              style: TextStyle(color: message.contains('Error') ? Colors.red : Colors.green),
-              textAlign: TextAlign.center,
-            ),
-          ],
+              SizedBox(height: 20),
+              Text(
+                message,
+                style: TextStyle(color: message.contains('Error') ? Colors.red : Colors.green),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );

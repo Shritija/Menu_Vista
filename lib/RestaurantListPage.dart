@@ -286,9 +286,9 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Image.asset(
-                        'assets/images/not found.png',  // Add your image path here
-                        height: 180, // Adjust height as needed
-                        width: 180,  // Adjust width as needed
+                        'assets/images/notfound.png',  // Add your image path here
+                        height: 220, // Adjust height as needed
+                        width: 220,  // Adjust width as needed
                       ),
                       SizedBox(height: 16), // Add some space between the image and text
                       Text(

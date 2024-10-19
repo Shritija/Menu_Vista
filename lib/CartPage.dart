@@ -8,7 +8,6 @@ import 'AboutUsPage.dart';
 import 'ProfilePage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
 class CartPage extends StatefulWidget {
   final String? userId; // Accept userId as a nullable parameter
   final String restaurantId; // Accept restaurantId as a nullable parameter
@@ -41,7 +40,11 @@ class _CartPageState extends State<CartPage> {
     super.initState();
     userCartRef = cartCollection.doc(widget.userId);
     itemsCollection = userCartRef.collection(widget.restaurantId); // Create a collection with restaurantId
-    _addItemToCart(); // Call method to add item to cart
+
+    // Only call _addItemToCart if itemId is not null
+    if (widget.itemId != null) {
+      _addItemToCart();
+    }
   }
 
   void _addItemToCart() async {
@@ -54,7 +57,7 @@ class _CartPageState extends State<CartPage> {
       await itemsCollection.doc(widget.itemId).set({
         'price': widget.price,
         'selectedSize': widget.selectedSize,
-        'itemName': await _fetchItemName(),
+        'itemName': itemName,
         'extraInstructions': widget.extraInstructions,
         'quantity': 1, // Initialize quantity to 1
       });
@@ -63,9 +66,6 @@ class _CartPageState extends State<CartPage> {
 
   Future<String> _fetchItemName() async {
     // List of subcollection names to search through
-    if (widget.itemId == null) {
-      return 'Unknown Item';
-    }
     List<String> subcollections = ['snacks', 'breakfast', 'lunch', 'dinner'];
 
     for (String subcollection in subcollections) {
@@ -86,7 +86,6 @@ class _CartPageState extends State<CartPage> {
     // Return 'Unknown Item' if the item is not found in any subcollection
     return 'Unknown Item';
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -260,7 +259,6 @@ class _CartPageState extends State<CartPage> {
             );
           }
 
-
           final cartItems = snapshot.data!.docs;
 
           return Column(
@@ -292,14 +290,14 @@ class _CartPageState extends State<CartPage> {
                             IconButton(
                               icon: Icon(Icons.remove),
                               onPressed: () {
-                                _updateQuantity(cartItemId, cartItem['quantity'] - 1);
+                                _decreaseQuantity(cartItemId, cartItem);
                               },
                             ),
-                            Text('${cartItem['quantity']}'),
+                            Text(cartItem['quantity'].toString()), // Display item quantity
                             IconButton(
                               icon: Icon(Icons.add),
                               onPressed: () {
-                                _updateQuantity(cartItemId, cartItem['quantity'] + 1);
+                                _increaseQuantity(cartItemId, cartItem);
                               },
                             ),
                           ],
@@ -309,8 +307,17 @@ class _CartPageState extends State<CartPage> {
                   },
                 ),
               ),
-              _billDetails(cartItems),
-              _proceedToPayButton(cartItems),
+              ElevatedButton(
+                onPressed: () {
+                 // Navigator.push(
+                    //context,
+                    //MaterialPageRoute(
+                     // builder: (context) => PaymentPage(userId: widget.userId),
+                   // ),
+                 // );
+                },
+                child: Text('Proceed to Payment'),
+              ),
             ],
           );
         },
@@ -371,7 +378,7 @@ class _CartPageState extends State<CartPage> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => MenuPage(// Pass the documentId as userId
+                        MaterialPageRoute(builder: (context) => MenuPage(
                           Rid: widget.restaurantId,
                         )), // Replace with the correct page
                       );
@@ -385,69 +392,17 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  void _updateQuantity(String cartItemId, int newQuantity) {
-    if (newQuantity > 0) {
-      itemsCollection.doc(cartItemId).update({'quantity': newQuantity});
+  void _increaseQuantity(String itemId, Map<String, dynamic> cartItem) async {
+    int currentQuantity = cartItem['quantity'] ?? 1;
+    await itemsCollection.doc(itemId).update({'quantity': currentQuantity + 1});
+  }
+
+  void _decreaseQuantity(String itemId, Map<String, dynamic> cartItem) async {
+    int currentQuantity = cartItem['quantity'] ?? 1;
+    if (currentQuantity > 1) {
+      await itemsCollection.doc(itemId).update({'quantity': currentQuantity - 1});
     } else {
-      itemsCollection.doc(cartItemId).delete();
+      await itemsCollection.doc(itemId).delete(); // Remove the item if quantity is 1 and user wants to decrease
     }
   }
-
-  Widget _billDetails(List<QueryDocumentSnapshot> cartItems) {
-    double totalAmount = cartItems.fold(0.0, (sum, item) {
-      return sum + (item['price'] * item['quantity']);
-    });
-
-    double gst = totalAmount * 0.18;
-    double finalAmount = totalAmount + gst;
-
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
-        children: [
-          _billDetailRow('Item total', 'Rs ${totalAmount.toStringAsFixed(2)}'),
-          _billDetailRow('GST (18%)', 'Rs ${gst.toStringAsFixed(2)}'),
-          Divider(color: Colors.black),
-          _billDetailRow('Total to Pay', 'Rs ${finalAmount.toStringAsFixed(2)}', isBold: true),
-        ],
-      ),
-    );
-  }
-
-  Widget _billDetailRow(String title, String value, {bool isBold = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: TextStyle(fontSize: 16, fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
-          Text(value, style: TextStyle(fontSize: 16, fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
-        ],
-      ),
-    );
-  }
-
-  Widget _proceedToPayButton(List<QueryDocumentSnapshot> cartItems) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.yellow[600],
-        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-      ),
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PaymentPage(cartItems: cartItems),
-          ),
-        );
-      },
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('Proceed To Pay', style: TextStyle(color: Colors.black, fontSize: 18)),
-        ],
-      ),
-    );
-  }
 }
-
