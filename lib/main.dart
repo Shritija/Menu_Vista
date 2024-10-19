@@ -65,9 +65,13 @@ class MenuVistaApp extends StatelessWidget {
             final args = settings.arguments as Map<String, String>; // Expect a Map for cart
             return MaterialPageRoute(
               builder: (context) => CartPage(
-                restaurantId: args['restaurantId']!, // Get restaurantId
-                itemId: args['itemId']!, // Get itemId
-              ),
+                   restaurantId: args['restaurantId']!, // Get restaurantId
+                   itemId: args['itemId']!,
+                  userId: args['userId']!,
+                  extraInstructions: args['extraInstructions']!,
+                  selectedSize: args['selectedSize']!,
+                  price: args['price'] as int,
+        ),
             );
           case '/item':
             final itemArgs = settings.arguments as Map<String, String>; // Expect a Map for item

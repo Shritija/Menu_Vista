@@ -280,7 +280,25 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
               child: _isLoading
                   ? Center(child: CircularProgressIndicator())
                   : _restaurants.isEmpty && _searchPerformed
-                  ? Center(child: Text('Not Available'))
+                  ? Center(
+                child: Container(
+                 child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/images/not found.png',  // Add your image path here
+                        height: 180, // Adjust height as needed
+                        width: 180,  // Adjust width as needed
+                      ),
+                      SizedBox(height: 16), // Add some space between the image and text
+                      Text(
+                        'Restaurant Not Found',
+                        style: TextStyle(fontSize: 12), // Customize text style if needed
+                      ),
+                    ],
+                  ),
+                ),
+              )
                   : SingleChildScrollView(
                 child: Column(
                   children: _restaurants.map((restaurant) {
