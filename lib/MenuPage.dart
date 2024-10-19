@@ -8,6 +8,7 @@ import 'RestaurantListPage.dart';
 import 'ProfilePage.dart';
 import 'AboutUsPage.dart';
 import 'ItemPage.dart';
+import 'CartPage.dart';
 
 class MenuPage extends StatefulWidget {
   final String Rid;
@@ -23,6 +24,8 @@ class _MenuPageState extends State<MenuPage> {
   String vegStatus = 'Veg';
   String selectedMealType = '';
   String searchQuery = '';
+  String documentId='';
+  String email = FirebaseAuth.instance.currentUser?.email ?? '';
   Map<String, bool> mealSelections = {
     'Breakfast': false,
     'Lunch': false,
@@ -32,11 +35,67 @@ class _MenuPageState extends State<MenuPage> {
   Map<String, List<Map<String, dynamic>>> menuData = {};
   Map<String, String> selectedSizes = {};  // Track selected size per item
   Map<String, num> selectedPrices = {};    // Track selected price per item
+  Future<void> fetchDocumentId() async {
+    try {
+      QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .get();
+
+      if (userSnapshot.docs.isNotEmpty) {
+        setState(() {
+          documentId = userSnapshot.docs.first.id;
+        });
+      }
+    } catch (error) {
+      print('Error fetching documentId: $error');
+    }
+  }
+  Future<void> checkAndCreateCartIfNotExists() async {
+    // Get the current user's email
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null || user.email == null) {
+      print('No user is logged in.');
+      return;
+    }
+
+    String userEmail = user.email!;
+
+    // Get the user's document ID from the 'users' collection using the email field
+    QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: userEmail)
+        .limit(1)
+        .get();
+
+    if (userSnapshot.docs.isEmpty) {
+      print('User with email $userEmail not found in the users collection.');
+      return;
+    }
+
+    String userDocId = userSnapshot.docs.first.id;
+    DocumentSnapshot cartDoc = await FirebaseFirestore.instance
+        .collection('cart')
+        .doc(userDocId)
+        .get();
+
+    if (!cartDoc.exists) {
+      await FirebaseFirestore.instance.collection('cart').doc(userDocId).set({
+      });
+      print('Cart created for user with document ID: $userDocId');
+    } else {
+      print('Cart already exists for user with document ID: $userDocId');
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     fetchMenuData();
+    checkAndCreateCartIfNotExists();
+    if (email.isNotEmpty) {
+      fetchDocumentId(); // Call to fetch documentId on widget initialization
+    }
   }
 
   Future<void> fetchMenuData() async {
@@ -340,6 +399,13 @@ class _MenuPageState extends State<MenuPage> {
                         width: 1.0,
                       ),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                      borderSide: BorderSide(
+                        color: Colors.black, // Set the focused border color to black
+                        width: 2.0,
+                      ),
+                    ),
                   ),
                 ),
                 SizedBox(height: 10),
@@ -455,16 +521,23 @@ class _MenuPageState extends State<MenuPage> {
                     ],
                   ),
                   padding: EdgeInsets.all(10.0),
-                  //child: IconButton(
-                  //  iconSize: 30.0,
-                  //  icon: Image.asset('assets/images/shoppingcarticon.png'),
-                  /*onPressed: () {
+                  child: IconButton(
+                    iconSize: 30.0,
+                    icon: Image.asset('assets/images/shoppingcarticon.png'),
+                  onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => CartPage()), // Replace with the correct page
+                        MaterialPageRoute(builder: (context) => CartPage(
+                          userId: documentId,           // Pass the documentId as userId
+                          restaurantId: widget.Rid,
+                          itemId: ' ',      // Include other required parameters as needed
+                          selectedSize: ' ',
+                          price: 0,
+                          extraInstructions: ' ',
+                        )), // Replace with the correct page
                       );
-                    },*/
-                  // ),
+                    },
+                   ),
                 ),
               ),
             ],
@@ -528,6 +601,11 @@ class _MenuPageState extends State<MenuPage> {
     required num? largePrice,
     required String documentId,
   }) {
+    // Truncate the description if it's too long
+    String truncatedDescription = description.length > 50
+        ? description.substring(0, 50) + '...'
+        : description;
+
     return GestureDetector(
       onTap: () {
         // Navigate to the ItemPage and pass Rid and documentId
@@ -564,7 +642,6 @@ class _MenuPageState extends State<MenuPage> {
                       imageUrl, // Use the imageUrl passed from the menu item
                       fit: BoxFit.cover,
                     ),
-
                   ),
                 ),
                 SizedBox(width: 5),
@@ -572,8 +649,18 @@ class _MenuPageState extends State<MenuPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(name, style: TextStyle(fontFamily: 'Oswald', fontSize: 16, fontWeight: FontWeight.bold)),
-                      Text(description, style: TextStyle(fontSize: 12)),
+                      Text(
+                        name,
+                        style: TextStyle(
+                          fontFamily: 'Oswald',
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        truncatedDescription, // Display truncated description
+                        style: TextStyle(fontSize: 12),
+                      ),
                       SizedBox(height: 10),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -615,6 +702,7 @@ class _MenuPageState extends State<MenuPage> {
       ),
     );
   }
+
 
   Widget _buildSizeButton(String label, num price, String documentId) {
     bool isSelected = selectedSizes[documentId] == label; // Check if this size is selected for this item

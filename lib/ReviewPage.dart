@@ -7,7 +7,7 @@ import 'RestaurantListPage.dart';
 import 'OrderHistoryPage.dart';
 import 'AboutUsPage.dart';
 import 'ProfilePage.dart';
-
+import 'CartPage.dart';
 
 
 class ReviewPage extends StatefulWidget {
@@ -25,6 +25,8 @@ class _ReviewPageState extends State<ReviewPage> {
   int rating = 0;
   String username = 'Anonymous'; // Default username, can be dynamic if needed.
   double averageRating = 0.0; // To store the average rating.
+  String documentId = ' ';
+  String email = FirebaseAuth.instance.currentUser?.email ?? '';
   final List<String> mealTypes = ['breakfast', 'lunch', 'dinner', 'snacks'];
 
   final TextEditingController _reviewController = TextEditingController();
@@ -34,7 +36,10 @@ class _ReviewPageState extends State<ReviewPage> {
   void initState() {
     super.initState();
     _calculateAverageRating();
-    _fetchUsername(); // Fetch username on initialization.
+    _fetchUsername();
+    if (email.isNotEmpty) {
+      fetchDocumentId(); // Call to fetch documentId on widget initialization
+    }
   }
 
   @override
@@ -42,7 +47,22 @@ class _ReviewPageState extends State<ReviewPage> {
     _reviewController.dispose();
     super.dispose();
   }
+  Future<void> fetchDocumentId() async {
+    try {
+      QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .get();
 
+      if (userSnapshot.docs.isNotEmpty) {
+        setState(() {
+          documentId = userSnapshot.docs.first.id;
+        });
+      }
+    } catch (error) {
+      print('Error fetching documentId: $error');
+    }
+  }
   void _fetchUsername() async {
     User? user = FirebaseAuth.instance.currentUser; // Get the currently logged-in user
 
@@ -523,10 +543,7 @@ class _ReviewPageState extends State<ReviewPage> {
                     iconSize: 20.0,
                     icon: Icon(Icons.arrow_back, color: Colors.white),
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => RestaurantListPage()), // Replace with the correct page
-                      );
+                        Navigator.pop(context); // Go back to the previous page
                     },
                   ),
                 ),
@@ -547,16 +564,23 @@ class _ReviewPageState extends State<ReviewPage> {
                     ],
                   ),
                   padding: EdgeInsets.all(10.0),
-                  //child: IconButton(
-                  //  iconSize: 30.0,
-                  //  icon: Image.asset('assets/images/shoppingcarticon.png'),
-                  /*onPressed: () {
+                  child: IconButton(
+                    iconSize: 30.0,
+                    icon: Image.asset('assets/images/shoppingcarticon.png'),
+                  onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => CartPage()), // Replace with the correct page
+                        MaterialPageRoute(builder: (context) => CartPage(
+                          userId: documentId,           // Pass the documentId as userId
+                          restaurantId: widget.restaurantId,
+                          itemId: ' ',      // Include other required parameters as needed
+                          selectedSize: ' ',
+                          price: 0,
+                          extraInstructions: ' ',
+                        )), // Replace with the correct page
                       );
-                    },*/
-                  // ),
+                    },
+                   ),
                 ),
               ),
             ],

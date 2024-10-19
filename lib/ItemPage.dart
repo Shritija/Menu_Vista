@@ -8,7 +8,7 @@ import 'AboutUsPage.dart';
 import 'CartPage.dart';
 import 'ProfilePage.dart';
 import 'ReviewPage.dart';
-import 'main.dart';
+
 
 
 class ItemPage extends StatefulWidget {
@@ -23,15 +23,23 @@ class ItemPage extends StatefulWidget {
 
 class _ItemPageState extends State<ItemPage> {
   Map<String, dynamic>? itemData;
-  String selectedSize = 'Medium';
+  String selectedSize = ' ';
   int price = 0;
+  String extrainstructions = '';
+  String? userId;
+  String documentId = ' ';
   List<String> availableSizes = [];
   final List<String> mealTypes = ['breakfast', 'lunch', 'snacks', 'dinner'];
+  String email = FirebaseAuth.instance.currentUser?.email ?? '';
 
   @override
   void initState() {
     super.initState();
     _fetchItemDetails();
+    _fetchUserId();
+    if (email.isNotEmpty) {
+      fetchDocumentId(); // Call to fetch documentId on widget initialization
+    }
   }
 
   void _fetchItemDetails() async {
@@ -83,6 +91,41 @@ class _ItemPageState extends State<ItemPage> {
       }
     }
   }
+  Future<void> fetchDocumentId() async {
+    try {
+      QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .get();
+
+      if (userSnapshot.docs.isNotEmpty) {
+        setState(() {
+          documentId = userSnapshot.docs.first.id;
+        });
+      }
+    } catch (error) {
+      print('Error fetching documentId: $error');
+    }
+  }
+  void _fetchUserId() async {
+    String email = FirebaseAuth.instance.currentUser?.email ?? '';
+    if (email.isNotEmpty) {
+      QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .get();
+
+      if (userSnapshot.docs.isNotEmpty) {
+        setState(() {
+          userId = userSnapshot.docs.first.id; // Store the user document ID
+        });
+      } else {
+        print('User document not found.');
+      }
+    } else {
+      print('No user is currently logged in.');
+    }
+  }
 
   void _updatePrice(String size) {
     setState(() {
@@ -100,11 +143,41 @@ class _ItemPageState extends State<ItemPage> {
     if (itemData == null) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('Loading...'),
+          backgroundColor: Color(0xFF1B1D21),// Set the AppBar color
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white), // White back arrow
+            onPressed: () {
+              Navigator.pop(context); // Handle back navigation
+            },
+          ),
         ),
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/images/image_processing20200705-25128-1a0u0wj.gif', // Replace with your image path
+                height: 400, // Adjust the height as needed
+                width: 400, // Adjust the width as needed
+                fit: BoxFit.cover, // Fit image within the box
+              ),
+              SizedBox(height: 16), // Add space between the image and text
+              Text(
+                'Loading...',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontFamily: 'Oswald', // Use Oswald font
+                  fontWeight: FontWeight.bold, // Bold text
+                ),
+              ),
+            ],
+          ),
+        ),
+        backgroundColor:Color(0xFF1B1D21), // Set background color to match the app theme
       );
     }
+
     return Scaffold(
         backgroundColor: Color(0xFFEAFCFA),
         appBar: AppBar(
@@ -338,16 +411,81 @@ class _ItemPageState extends State<ItemPage> {
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => UnderConstructionPage(),
-                                ),
+                              showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    backgroundColor: Color(0xFF1B3C3D), // Dialog box color
+                                    title: Text(
+                                      'Add Extra Instructions',
+                                      style: TextStyle(color: Colors.white), // Title text color
+                                    ),
+                                    content: TextField(
+                                      onChanged: (value) {
+                                        extrainstructions = value; // Save input to extrainstructions
+                                      },
+                                      maxLines: 3, // Text area effect
+                                      decoration: InputDecoration(
+                                        hintText: 'Type any additional instructions here',
+                                        hintStyle: TextStyle(color: Colors.white), // Hint text color
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(0.1), // Text field background
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: BorderSide(color: Colors.white),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: BorderSide(color: Colors.black, width: 2), // Focused border color
+                                        ),
+                                      ),
+                                      style: TextStyle(color: Colors.black), // Input text color
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop(); // Close the dialog
+                                        },
+                                        child: Text(
+                                          'Cancel',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold, // Bold white text
+                                          ),
+                                        ),
+                                        style: TextButton.styleFrom(
+                                          backgroundColor: Color(0xFFFFDE59), // Button color
+                                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop(); // Close the dialog
+                                        },
+                                        child: Text(
+                                          'OK',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold, // Bold white text
+                                          ),
+                                        ),
+                                        style: TextButton.styleFrom(
+                                          backgroundColor: Color(0xFFFFDE59), // Button color
+                                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
                               );
                             },
                             child: Text(
                               'Customize',
-                              style: TextStyle(fontSize: 15, color: Colors.black, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Color(0xFFFFDE59),
@@ -395,7 +533,14 @@ class _ItemPageState extends State<ItemPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => CartPage(restaurantId: widget.restaurantId, itemId: widget.itemId),
+                              builder: (context) => CartPage(
+                                restaurantId: widget.restaurantId,
+                                itemId: widget.itemId,
+                                userId: userId!,
+                                extraInstructions: extrainstructions,
+                                selectedSize: selectedSize,
+                                price: price,
+                              ),
                             ),
                           );
                         },
@@ -448,10 +593,7 @@ class _ItemPageState extends State<ItemPage> {
                     iconSize: 20.0,
                     icon: Icon(Icons.arrow_back, color: Colors.white),
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => RestaurantListPage()), // Replace with the correct page
-                      );
+                      Navigator.pop(context); // Go back to the previous page
                     },
                   ),
                 ),
@@ -472,16 +614,23 @@ class _ItemPageState extends State<ItemPage> {
                     ],
                   ),
                   padding: EdgeInsets.all(10.0),
-                  //child: IconButton(
-                  //  iconSize: 30.0,
-                  //  icon: Image.asset('assets/images/shoppingcarticon.png'),
-                  /*onPressed: () {
+                  child: IconButton(
+                    iconSize: 30.0,
+                    icon: Image.asset('assets/images/shoppingcarticon.png'),
+                  onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => CartPage()), // Replace with the correct page
+                        MaterialPageRoute(builder: (context) => CartPage(
+                          userId: documentId,           // Pass the documentId as userId
+                          restaurantId: widget.restaurantId,
+                          itemId: ' ',      // Include other required parameters as needed
+                          selectedSize: ' ',
+                          price: 0,
+                          extraInstructions: ' ',
+                        )), // Replace with the correct page
                       );
-                    },*/
-                  // ),
+                    },
+                  ),
                 ),
               ),
             ],
