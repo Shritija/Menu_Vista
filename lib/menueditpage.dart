@@ -37,77 +37,89 @@ class _MenuEditPageState extends State<MenuEditPage> {
   }
 
   Future<void> fetchMenuData({bool preserveSelectedMealType = false}) async {
-  setState(() {
-    isLoading = true; // Start loading
-  });
-  try {
-    final restaurantQuery = await FirebaseFirestore.instance
-        .collection('restaurant')
-        .doc(widget.Rid)
-        .get();
-    if (restaurantQuery.exists) {
-      final mealTypesRef = restaurantQuery.reference.collection('menuItems').doc('MealTypes');
-
-      final mealTypes = ['breakfast', 'lunch', 'snacks', 'dinner'];
-
-      for (var mealType in mealTypes) {
-        try {
-          final mealCollectionSnapshot = await mealTypesRef.collection(mealType).get();
-          if (mealCollectionSnapshot.docs.isNotEmpty) {
-              setState(() {
-                  mealSelections[capitalize(mealType)] = true;
-                  menuData[capitalize(mealType)] = mealCollectionSnapshot.docs
-                      .map((doc) => {
-                          'itemId': doc.id,
-                          'itemname': doc['itemname'],
-                          'itemimage': doc['itemimage']?.isNotEmpty == true 
-                              ? doc['itemimage'] 
-                              : "https://th.bing.com/th/id/OIP.xMGhvTUooiLk2wpYCa7R1QHaHa?w=170&h=180&c=7&r=0&o=5&pid=1.7",
-                          'description': doc['description'],
-                          'ingredients': doc['ingredients'],
-                          'isveg': doc['isveg'],
-                          'small': doc['small'],
-                          'medium': doc['medium'],
-                          'view': doc['view'],
-                      })
-                      .where((item) {
-                          print("Item name: ${item['itemname']}, View: ${item['view']}, Veg: ${item['isveg']}");
-                          return isVeg ? item['isveg'] == true : item['isveg'] == false;
-                      })
-                      .where((item) => item['view'] == 'show')
-                      .toList();
-              });
-          }
-          else {
-            setState(() {
-              mealSelections[capitalize(mealType)] = false;
-            });
-          }
-        } catch (e) {
-          print('Error fetching $mealType collection: $e');
-          setState(() {
-            mealSelections[capitalize(mealType)] = false;
-          });
-        }
-      }
-
-      // Set the first available meal type as the default selected, only if not preserving
-      if (!preserveSelectedMealType) {
-        selectedMealType = mealSelections.entries.firstWhere((entry) => entry.value, orElse: () => MapEntry('', false)).key;
-      }
-    } else {
-      print('No document found with Rid: ${widget.Rid}');
-    }
-  } catch (e) {
-    print('Error fetching menu data: $e');
-  } finally {
     setState(() {
-      isLoading = false; // Loading finished
+      isLoading = true; // Start loading
     });
-  }
-}
+    try {
+      final restaurantQuery = await FirebaseFirestore.instance
+          .collection('restaurant')
+          .doc(widget.Rid)
+          .get();
+      if (restaurantQuery.exists) {
+        final mealTypesRef = restaurantQuery.reference.collection('menuItems').doc('MealTypes');
 
- Future<void> performSearch(String query) async {
+        // Fetch collection names directly from Firestore using known meal types or handle custom meal types manually
+        List<String> knownMealTypes = ['breakfast', 'lunch', 'snacks', 'dinner'];
+
+        // Loop through known and custom meal types
+        for (var mealType in knownMealTypes) {
+          await fetchMealTypeData(mealTypesRef, mealType);
+        }
+        
+        // You can also add a list of custom meal types if you allow dynamic addition by users.
+        // Example:
+        // for (String customMealType in customMealTypes) {
+        //     await fetchMealTypeData(mealTypesRef, customMealType);
+        // }
+
+        // Set the first available meal type as the default selected, only if not preserving
+        if (!preserveSelectedMealType) {
+          selectedMealType = mealSelections.entries.firstWhere((entry) => entry.value, orElse: () => MapEntry('', false)).key;
+        }
+      } else {
+        print('No document found with Rid: ${widget.Rid}');
+      }
+    } catch (e) {
+      print('Error fetching menu data: $e');
+    } finally {
+      setState(() {
+        isLoading = false; // Loading finished
+      });
+    }
+  }
+
+  Future<void> fetchMealTypeData(DocumentReference mealTypesRef, String mealType) async {
+    try {
+      final mealCollectionSnapshot = await mealTypesRef.collection(mealType).get();
+      if (mealCollectionSnapshot.docs.isNotEmpty) {
+          setState(() {
+              mealSelections[capitalize(mealType)] = true;
+              menuData[capitalize(mealType)] = mealCollectionSnapshot.docs
+                  .map((doc) => {
+                      'itemId': doc.id,
+                      'itemname': doc['itemname'],
+                      'itemimage': doc['itemimage']?.isNotEmpty == true 
+                          ? doc['itemimage'] 
+                          : "https://th.bing.com/th/id/OIP.xMGhvTUooiLk2wpYCa7R1QHaHa?w=170&h=180&c=7&r=0&o=5&pid=1.7",
+                      'description': doc['description'],
+                      'ingredients': doc['ingredients'],
+                      'isveg': doc['isveg'],
+                      'small': doc['small'],
+                      'medium': doc['medium'],
+                      'view': doc['view'],
+                  })
+                  .where((item) {
+                      return isVeg ? item['isveg'] == true : item['isveg'] == false;
+                  })
+                  .where((item) => item['view'] == 'show')
+                  .toList();
+          });
+      }
+      else {
+        setState(() {
+          mealSelections[capitalize(mealType)] = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching $mealType collection: $e');
+      setState(() {
+        mealSelections[capitalize(mealType)] = false;
+      });
+    }
+  }
+
+
+  Future<void> performSearch(String query) async {
     setState(() {
       searchQuery = query;
     });
@@ -125,10 +137,11 @@ class _MenuEditPageState extends State<MenuEditPage> {
         // Clear current search results
         menuData = {};
 
-        // List of meal types to search
-        final mealTypes = ['breakfast', 'lunch', 'snacks', 'dinner'];
+        // Define known meal types or dynamically handle custom meal types if necessary
+        List<String> knownMealTypes = ['breakfast', 'lunch', 'snacks', 'dinner'];
 
-        for (var mealType in mealTypes) {
+        // Loop through known and custom meal types
+        for (var mealType in knownMealTypes) {
           try {
             final mealCollectionSnapshot = await mealTypesRef.collection(mealType)
                 .where('itemname', isGreaterThanOrEqualTo: query)
@@ -165,8 +178,7 @@ class _MenuEditPageState extends State<MenuEditPage> {
               });
             }
           } 
-          catch (e)
-           {
+          catch (e) {
             print('Error searching $mealType collection: $e');
           }
         }
@@ -174,10 +186,11 @@ class _MenuEditPageState extends State<MenuEditPage> {
     } catch (e) {
       print('Error searching for items: $e');
     }
-    //fetchMenuData(preserveSelectedMealType: true);
   }
 
+
   String capitalize(String s) => s[0].toUpperCase() + s.substring(1);
+
 
   @override
   Widget build(BuildContext context) {
