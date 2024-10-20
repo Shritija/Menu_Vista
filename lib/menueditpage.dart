@@ -36,77 +36,87 @@ class _MenuEditPageState extends State<MenuEditPage> {
   }
 
   Future<void> fetchMenuData({bool preserveSelectedMealType = false}) async {
-  setState(() {
-    isLoading = true; // Start loading
-  });
-  try {
-    final restaurantQuery = await FirebaseFirestore.instance
-        .collection('restaurant')
-        .doc(widget.Rid)
-        .get();
-    if (restaurantQuery.exists) {
-      final mealTypesRef = restaurantQuery.reference.collection('menuItems').doc('MealTypes');
+    setState(() {
+      isLoading = true; // Start loading
+    });
+    try {
+      final restaurantQuery = await FirebaseFirestore.instance
+          .collection('restaurant')
+          .doc(widget.Rid)
+          .get();
 
-      final mealTypes = ['breakfast', 'lunch', 'snacks', 'dinner'];
+      if (restaurantQuery.exists) {
+        final mealTypesRef = restaurantQuery.reference.collection('menuItems').doc('MealTypes');
 
-      for (var mealType in mealTypes) {
-        try {
-          final mealCollectionSnapshot = await mealTypesRef.collection(mealType).get();
-          if (mealCollectionSnapshot.docs.isNotEmpty) {
+        final mealTypes = ['breakfast', 'lunch', 'snacks', 'dinner'];
+
+        for (var mealType in mealTypes) {
+          try {
+            final mealCollectionSnapshot = await mealTypesRef.collection(mealType).get();
+            if (mealCollectionSnapshot.docs.isNotEmpty) {
               setState(() {
-                  mealSelections[capitalize(mealType)] = true;
-                  menuData[capitalize(mealType)] = mealCollectionSnapshot.docs
-                      .map((doc) => {
-                          'itemId': doc.id,
-                          'itemname': doc['itemname'],
-                          'itemimage': doc['itemimage']?.isNotEmpty == true 
-                              ? doc['itemimage'] 
-                              : "https://th.bing.com/th/id/OIP.xMGhvTUooiLk2wpYCa7R1QHaHa?w=170&h=180&c=7&r=0&o=5&pid=1.7",
-                          'description': doc['description'],
-                          'ingredients': doc['ingredients'],
-                          'isveg': doc['isveg'],
-                          'small': doc['small'],
-                          'medium': doc['medium'],
-                          'view': doc['view'],
-                      })
-                      .where((item) {
-                          print("Item name: ${item['itemname']}, View: ${item['view']}, Veg: ${item['isveg']}");
-                          return isVeg ? item['isveg'] == true : item['isveg'] == false;
-                      })
-                      .where((item) => item['view'] == 'show')
-                      .toList();
+                mealSelections[capitalize(mealType)] = true;
+                menuData[capitalize(mealType)] = mealCollectionSnapshot.docs
+                    .map((doc) => {
+                  'itemId': doc.id,
+                  'itemname': doc['itemname'] ?? 'Unknown item', // Handle null itemname
+                  'itemimage': (doc['itemimage'] != null && doc['itemimage'].isNotEmpty)
+                      ? doc['itemimage']
+                      : "https://th.bing.com/th/id/OIP.xMGhvTUooiLk2wpYCa7R1QHaHa?w=170&h=180&c=7&r=0&o=5&pid=1.7", // Handle null or empty itemimage
+                  'description': doc['description'] ?? 'No description available', // Handle null description
+                  'ingredients': doc['ingredients'] ?? 'No ingredients specified', // Handle null ingredients
+                  'isveg': doc['isveg'] ?? false, // Handle null isveg, default to false
+                  'small': doc.data().containsKey('small') && doc['small'] != null
+                      ? doc['small']
+                      : 'N/A', // Handle missing or null small size
+                  'medium': doc.data().containsKey('medium') && doc['medium'] != null
+                      ? doc['medium']
+                      : 'N/A', // Handle missing or null medium size
+                  'large': doc.data().containsKey('large') && doc['large'] != null
+                      ? doc['large']
+                      : 'N/A', // Handle missing or null large size
+                  'view': doc['view'] ?? 'hidden', // Handle null view, default to 'hidden'
+                })
+                    .where((item) {
+                  print("Item name: ${item['itemname']}, View: ${item['view']}, Veg: ${item['isveg']}");
+                  return isVeg ? item['isveg'] == true : item['isveg'] == false;
+                })
+                    .where((item) => item['view'] == 'show') // Filter by visible items
+                    .toList();
               });
-          }
-          else {
+            } else {
+              setState(() {
+                mealSelections[capitalize(mealType)] = false;
+              });
+            }
+          } catch (e) {
+            print('Error fetching $mealType collection: $e');
             setState(() {
               mealSelections[capitalize(mealType)] = false;
             });
           }
-        } catch (e) {
-          print('Error fetching $mealType collection: $e');
-          setState(() {
-            mealSelections[capitalize(mealType)] = false;
-          });
         }
-      }
 
-      // Set the first available meal type as the default selected, only if not preserving
-      if (!preserveSelectedMealType) {
-        selectedMealType = mealSelections.entries.firstWhere((entry) => entry.value, orElse: () => MapEntry('', false)).key;
+        // Optionally preserve selected meal type
+        // if (!preserveSelectedMealType) {
+        //   selectedMealType = mealSelections.entries
+        //       .firstWhere((entry) => entry.value, orElse: () => MapEntry('', false))
+        //       .key;
+        // }
+      } else {
+        print('No document found with Rid: ${widget.Rid}');
       }
-    } else {
-      print('No document found with Rid: ${widget.Rid}');
+    } catch (e) {
+      print('Error fetching menu data: $e');
+    } finally {
+      setState(() {
+        isLoading = false; // Loading finished
+      });
     }
-  } catch (e) {
-    print('Error fetching menu data: $e');
-  } finally {
-    setState(() {
-      isLoading = false; // Loading finished
-    });
   }
-}
 
- Future<void> performSearch(String query) async {
+
+  Future<void> performSearch(String query) async {
     setState(() {
       searchQuery = query;
     });
@@ -139,12 +149,15 @@ class _MenuEditPageState extends State<MenuEditPage> {
                 mealSelections[capitalize(mealType)] = true;
                 menuData[capitalize(mealType)] = mealCollectionSnapshot.docs.map((doc) {
                   Map<String, dynamic> itemData = {
-                    'itemname': doc['itemname'],
-                    'itemimage': doc['itemimage'],
-                    'description': doc['description'],
-                    'isveg': doc['isveg'],
+                    'itemname': doc['itemname'] ?? 'Unknown item', // Add default values
+                    'itemimage': (doc['itemimage'] != null && doc['itemimage'].isNotEmpty)
+                        ? doc['itemimage']
+                        : "https://th.bing.com/th/id/OIP.xMGhvTUooiLk2wpYCa7R1QHaHa?w=170&h=180&c=7&r=0&o=5&pid=1.7",
+                    'description': doc['description'] ?? 'No description available',
+                    'isveg': doc['isveg'] ?? false,
                     'documentId': doc.id,
                   };
+
                   if (doc.data().containsKey('small') && doc['small'] != null) {
                     itemData['small'] = doc['small'];
                   }
@@ -163,9 +176,7 @@ class _MenuEditPageState extends State<MenuEditPage> {
                 menuData[capitalize(mealType)] = [];
               });
             }
-          } 
-          catch (e)
-           {
+          } catch (e) {
             print('Error searching $mealType collection: $e');
           }
         }
@@ -173,8 +184,8 @@ class _MenuEditPageState extends State<MenuEditPage> {
     } catch (e) {
       print('Error searching for items: $e');
     }
-    //fetchMenuData(preserveSelectedMealType: true);
   }
+
 
   String capitalize(String s) => s[0].toUpperCase() + s.substring(1);
 
@@ -407,7 +418,7 @@ class _MenuEditPageState extends State<MenuEditPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => addItemPage(widget.Rid),
+                        builder: (context) => AddItemPage(widget.Rid),
                       ),
                     );
                   },
@@ -567,7 +578,7 @@ class _MenuEditPageState extends State<MenuEditPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      item['itemname'],
+                      item['itemname']?? 'Unknown item',
                       maxLines: 1, // Show only one line
                       overflow: TextOverflow.ellipsis, // Truncate the text if it exceeds one line
                       style: TextStyle(
@@ -578,7 +589,7 @@ class _MenuEditPageState extends State<MenuEditPage> {
                     ),
                     SizedBox(height: 5),
                     Text(
-                      item['description'],
+                      item['description'] ?? 'No description available',
                       maxLines: 2, // Show only two lines
                       overflow: TextOverflow.ellipsis, // Truncate the text if it exceeds two lines
                       style: TextStyle(

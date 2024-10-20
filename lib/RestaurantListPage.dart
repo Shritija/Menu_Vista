@@ -35,7 +35,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     _loadFavorites();
   }
 
-  // Function to load user favorites from Firestore
+
   // Function to load user favorites from Firestore
   Future<void> _loadFavorites() async {
     setState(() {
