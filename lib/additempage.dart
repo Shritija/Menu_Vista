@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';  
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,16 +9,16 @@ import 'LoginPage.dart';
 import 'restaurantProfilePage.dart';
 import 'dart:io';
 
-class addItemPage extends StatefulWidget {  
+class AddItemPage extends StatefulWidget {
   final String restaurantId;
 
-  addItemPage(this.restaurantId);
+  AddItemPage(this.restaurantId);
 
   @override
-  _addItemPageState createState() => _addItemPageState();
+  _AddItemPageState createState() => _AddItemPageState();
 }
 
-class _addItemPageState extends State<addItemPage> {
+class _AddItemPageState extends State<AddItemPage> {
   TextEditingController nameController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   TextEditingController ingredientController = TextEditingController();
@@ -27,7 +27,7 @@ class _addItemPageState extends State<addItemPage> {
   TextEditingController largePriceController = TextEditingController();
   TextEditingController mediumPriceController = TextEditingController();
   TextEditingController smallPriceController = TextEditingController();
-  
+
   bool isVeg = true;
   bool hasVariableSizes = false;
   String selectedMealType = 'snacks';
@@ -39,11 +39,19 @@ class _addItemPageState extends State<addItemPage> {
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      // Upload to Firebase Storage
+      // Ensure that the item name is provided
+      if (nameController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Please enter the item name before uploading an image"))
+        );
+        return;
+      }
+
+      // Upload to Firebase Storage with the item name
       final storageRef = FirebaseStorage.instance.ref();
-      final itemRef = storageRef.child('items/${pickedFile.name}');
+      final itemRef = storageRef.child('items/${nameController.text}.jpg');
       await itemRef.putFile(File(pickedFile.path));
-      
+
       // Get the download URL
       String downloadUrl = await itemRef.getDownloadURL();
       setState(() {
@@ -91,8 +99,8 @@ class _addItemPageState extends State<addItemPage> {
                 onTap: _pickImage, // Call the image picking method
                 child: Container(
                   height: 150,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
                     color: Colors.grey,
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -105,50 +113,83 @@ class _addItemPageState extends State<addItemPage> {
               TextField(
                 controller: nameController,
                 decoration: InputDecoration(
-                    labelText: 'Item Name',
-                    hintText: 'Ex: Butter Chicken',
-                    filled: true,
-                    fillColor: Colors.grey,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                  labelText: 'Item Name',
+                  hintText: 'Ex: Butter Chicken',
+                  filled: true,
+                  fillColor: Colors.grey,
+                  floatingLabelStyle: TextStyle(
+                          color: Color.fromARGB(255, 255, 222, 89),
+                          shadows: [
+                            Shadow(
+                              color: Colors.black,
+                              offset: Offset(2.0, 2.0),
+                              blurRadius: 1.0,
+                            )
+                          ],
+                        ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
                   ),
                 ),
               ),
               SizedBox(height: 10),
               TextField(
                 controller: descriptionController,
-                decoration: InputDecoration(labelText: 'Item Description', hintText: 'Ex: Creamy, rich, and mildly spiced tomato-based curry with tender chicken pieces, finished with butter and cream.',
-                    filled: true,
-                    fillColor: Colors.grey,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                decoration: InputDecoration(
+                  labelText: 'Item Description',
+                  hintText: 'Ex: Creamy, rich, and mildly spiced tomato-based curry with tender chicken pieces, finished with butter and cream.',
+                  filled: true,
+                  fillColor: Colors.grey,
+                  floatingLabelStyle: TextStyle(
+                          color: Color.fromARGB(255, 255, 222, 89),
+                          shadows: [
+                            Shadow(
+                              color: Colors.black,
+                              offset: Offset(2.0, 2.0),
+                              blurRadius: 1.0,
+                            )
+                          ],
+                        ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
                   ),
                 ),
               ),
               SizedBox(height: 10),
               TextField(
                 controller: ingredientController,
-                decoration: InputDecoration(labelText: 'Item Ingredient', 
-                   hintText: 'Ex: Chicken, tomato puree, butter, cream, garlic, ginger, spices, and herbs.',
-                    filled: true,
-                    fillColor: Colors.grey,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                decoration: InputDecoration(
+                  labelText: 'Item Ingredient',
+                  hintText: 'Ex: Chicken, tomato puree, butter, cream, garlic, ginger, spices, and herbs.',
+                  filled: true,
+                  fillColor: Colors.grey,
+                  floatingLabelStyle: TextStyle(
+                          color: Color.fromARGB(255, 255, 222, 89),
+                          shadows: [
+                            Shadow(
+                              color: Colors.black,
+                              offset: Offset(2.0, 2.0),
+                              blurRadius: 1.0,
+                            )
+                          ],
+                        ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
                   ),
                 ),
               ),
@@ -212,81 +253,108 @@ class _addItemPageState extends State<addItemPage> {
                   ),
                 ],
               ),
-
               SizedBox(height: 10),
-                TextField(
-                  controller: largePriceController,
-                  decoration: InputDecoration(labelText: 'Large Price', 
-                   hintText: 'Ex: 200',
-                    filled: true,
-                    fillColor: Colors.grey,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                  //   contentPadding: const EdgeInsets.symmetric(
-                  //     horizontal: 16,
-                  //     vertical: 12,
-                  // ),
-                 ),
-                
-                  keyboardType: TextInputType.number,
-                ),
-                SizedBox(height: 10),
-                TextField(
-                  controller: mediumPriceController,
-                  decoration: InputDecoration(labelText: 'Medium Price', 
-                   hintText: 'Ex: 150',
-                    filled: true,
-                    fillColor: Colors.grey,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                  //   contentPadding: const EdgeInsets.symmetric(
-                  //     horizontal: 16,
-                  //     vertical: 12,
-                  // ),
-                 ),
-                  keyboardType: TextInputType.number,
-                ),
-                SizedBox(height: 10),
-                TextField(
-                  controller: smallPriceController,
-                  decoration: InputDecoration(labelText: 'Small Price', 
-                   hintText: 'Ex: 100',
-                    filled: true,
-                    fillColor: Colors.grey,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                  //   contentPadding: const EdgeInsets.symmetric(
-                  //     horizontal: 16,
-                  //     vertical: 12,
-                  // ),
+              TextField(
+                controller: largePriceController,
+                decoration: InputDecoration(
+                  labelText: 'Large Price',
+                  hintText: 'Ex: 200',
+                  filled: true,
+                  fillColor: Colors.grey,
+                  floatingLabelStyle: TextStyle(
+                          color: Color.fromARGB(255, 255, 222, 89),
+                          shadows: [
+                            Shadow(
+                              color: Colors.black,
+                              offset: Offset(2.0, 2.0),
+                              blurRadius: 1.0,
+                            )
+                          ],
+                        ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
                   ),
-                  keyboardType: TextInputType.number,
                 ),
+                keyboardType: TextInputType.number,
+              ),
+              SizedBox(height: 10),
+              TextField(
+                controller: mediumPriceController,
+                decoration: InputDecoration(
+                  labelText: 'Medium Price',
+                  hintText: 'Ex: 150',
+                  filled: true,
+                  fillColor: Colors.grey,
+                  floatingLabelStyle: TextStyle(
+                          color: Color.fromARGB(255, 255, 222, 89),
+                          shadows: [
+                            Shadow(
+                              color: Colors.black,
+                              offset: Offset(2.0, 2.0),
+                              blurRadius: 1.0,
+                            )
+                          ],
+                        ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              SizedBox(height: 10),
+              TextField(
+                controller: smallPriceController,
+                decoration: InputDecoration(
+                  labelText: 'Small Price',
+                  hintText: 'Ex: 100',
+                  filled: true,
+                  fillColor: Colors.grey,
+                  floatingLabelStyle: TextStyle(
+                          color: Color.fromARGB(255, 255, 222, 89),
+                          shadows: [
+                            Shadow(
+                              color: Colors.black,
+                              offset: Offset(2.0, 2.0),
+                              blurRadius: 1.0,
+                            )
+                          ],
+                        ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                keyboardType: TextInputType.number,
+              ),
               SizedBox(height: 20),
               ElevatedButton(
-                  onPressed: () {
-                    // Determine the collection path
-                    String mealTypeToStore = selectedMealType;
-
-                    // Prepare the data map to store in Firestore
-                    Map<String, dynamic> dataToStore = {
-                      'itemname': nameController.text,
-                      'description': descriptionController.text,
-                      'ingredients': ingredientController.text,
-                      'isveg': isVeg,
-                      'view': 'show',
-                      'itemimage': itemImage.isNotEmpty 
-                          ? itemImage 
-                          : "https://static.vecteezy.com/system/resources/previews/022/014/063/original/missing-picture-page-for-website-design-or-mobile-app-design-no-image-available-icon-vector.jpg", // Default image URL
-                    };
-
-                    // Add variable sizes only if they are filled
+                style: ElevatedButton.styleFrom(
+                            elevation: 3,
+                            backgroundColor: Color(0xFF1B3C3D), // Dark green color
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            minimumSize: Size(100, 40), 
+                            // Set width and height (width, height)
+                    ),
+                onPressed: () {
+                  // Determine the collection path
+                  String mealTypeToStore = selectedMealType;
+                  // Prepare the data map to store in Firestore
+                  Map<String, dynamic> dataToStore = {
+                    'itemname': nameController.text,
+                    'description': descriptionController.text,
+                    'ingredients': ingredientController.text,
+                    'isveg': isVeg,
+                    'view': 'show',
+                    'itemimage': itemImage.isNotEmpty
+                        ? itemImage
+                        : "https://static.vecteezy.com/system/resources/previews/022/014/063/original/missing-picture-page-for-website-design-or-mobile-app-design-no-image-available-icon-vector.jpg", // Default image URL
+                    'imageurl': itemImage, // Save the image URL in Firestore
+                  };
+                  // Add variable sizes only if they are filled
                       if (largePriceController.text.isNotEmpty) {
                         dataToStore['large'] = double.tryParse(largePriceController.text) ?? 0.0;
                       }
@@ -296,99 +364,34 @@ class _addItemPageState extends State<addItemPage> {
                       if (smallPriceController.text.isNotEmpty) {
                         dataToStore['small'] = double.tryParse(smallPriceController.text) ?? 0.0;
                       }
-
-                    // Save to Firestore
-                    FirebaseFirestore.instance
-                        .collection('restaurant')
-                        .doc(widget.restaurantId)
-                        .collection('menuItems')
-                        .doc('MealTypes')
-                        .collection(mealTypeToStore)
-                        .add(dataToStore);
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                  child: Text("Done"),
-                ),
-
+                  FirebaseFirestore.instance
+                      .collection('restaurant')
+                      .doc(widget.restaurantId)
+                      .collection('menuItems')
+                      .doc('MealTypes')  // The parent document containing meal types
+                      .collection(selectedMealType)  // Subcollection for the selected meal type
+                      .doc(nameController.text)  // Document name will be the item name
+                      .set(dataToStore)
+                      .then((_) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Item added to $selectedMealType successfully!")),
+                    );
+                    Navigator.pop(context);
+                  })
+                      .catchError((error) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Failed to add item: $error")),
+                    );
+                  });
+                  Navigator.pop(context);
+                },
+                child: Text('Add Item', style: TextStyle(fontFamily: 'Oswald',
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold)),
+              ),
             ],
           ),
-        ),
-      ),
-      bottomNavigationBar: Container (
-        color: Color(0xFF1B3C3D),
-        height: 50,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFF1B3C3D),
-                  borderRadius: BorderRadius.circular(2),
-                  border: Border.all(
-                      color: Colors.black12, // Border color
-                      width: 1,          // Border width
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black45,
-                        offset: Offset(5, 5),
-                        blurRadius: 1.0,
-                      ),
-                    ],
-                  ),
-                padding: EdgeInsets.all(1.0),
-                child: IconButton(
-                  iconSize: 20.0, // Same smaller icon size
-                  icon: Image.asset(
-                    'assets/images/home_white.png',
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => OrderListPage(restaurantId: widget.restaurantId),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFF1B3C3D),
-                  borderRadius: BorderRadius.circular(2),
-                  border: Border.all(
-                      color: Colors.black12,
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black45,
-                        offset: Offset(5, 5),
-                        blurRadius: 1.0,
-                      ),
-                    ],
-                  ),
-                padding: EdgeInsets.all(1.0),
-                child: IconButton(
-                  iconSize: 20.0,
-                  icon: Image.asset(
-                    'assets/images/edit.png',
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MenuEditPage(Rid: widget.restaurantId),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );

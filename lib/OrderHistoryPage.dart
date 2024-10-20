@@ -2,17 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
-
-class OrderHistoryPage extends StatelessWidget {
-  final String documentId;
+class OrderHistoryPage extends StatefulWidget {
+  final String? documentId;
 
   OrderHistoryPage({required this.documentId});
+
+  @override
+  _OrderHistoryPageState createState() => _OrderHistoryPageState();
+}
+
+class _OrderHistoryPageState extends State<OrderHistoryPage> {
+  Map<String, String> lastKnownStatuses = {}; // Track the status of each order
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xFF1B3C3D),
+        backgroundColor: const Color(0xFF1B3C3D),
         title: Center(
           child: Image.asset(
             'assets/images/MenuVistaicon.png',
@@ -23,16 +29,15 @@ class OrderHistoryPage extends StatelessWidget {
         automaticallyImplyLeading: false,
       ),
       body: Container(
-        color: Color(0xFFEAFCFA),
+        color: const Color(0xFFEAFCFA),
         child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('orders')
-              .where('customerId', isEqualTo: documentId)
-              .where('orderstatus', isEqualTo: 'Done') // Fetch only completed orders
+              .where('customerId', isEqualTo: widget.documentId)
               .snapshots(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
-              return Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator());
             }
 
             final orders = snapshot.data!.docs;
@@ -41,17 +46,77 @@ class OrderHistoryPage extends StatelessWidget {
               itemCount: orders.length,
               itemBuilder: (context, index) {
                 var order = orders[index];
+
+                // Extracting order details
+                var orderId = order['orderId'] ?? 'Unknown';
+                var orderType = order['orderType'] ?? 'Unknown';
+                var orderStatus = order['orderstatus'] ?? 'Unknown';
+                var finalAmount = order['finalAmount'] ?? 0;
+                var gst = order['gst'] ?? 0;
+                var totalAmount = order['totalAmount'] ?? 0;
+                var paymentStatus = order['paymentStatus'] ?? 'Unknown';
+                var paymentId = order['paymentId'] ?? 'Unknown';
+                var timestamp = order['timestamp'] != null
+                    ? DateFormat('dd MMMM yyyy, hh:mm a').format(order['timestamp'].toDate())
+                    : 'Unknown';
+
+                // Handling items array
+                var items = order['items'] ?? [];
+                List<Widget> itemWidgets = [];
+
+                for (var item in items) {
+                  var itemName = item['itemName'] ?? 'Unknown Item';
+                  var quantity = item['quantity'] ?? 0;
+                  var price = item['price'] ?? 0;
+                  var selectedSize = item['selectedSize'] ?? 'Unknown Size';
+                  var itemInstructions = item['extraInstructions'] ?? 'None';
+
+                  itemWidgets.add(
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        '$itemName ($selectedSize) - Quantity: $quantity, Price: Rs $price\nInstructions: $itemInstructions',
+                        style: const TextStyle(
+                          fontFamily: 'Oswald',
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                // Define status colors
+                Color statusColor;
+                if (orderStatus.toLowerCase() == 'done') {
+                  statusColor = Colors.lightGreenAccent;
+                } else if (orderStatus.toLowerCase() == 'pending') {
+                  statusColor = Colors.redAccent;
+                } else {
+                  statusColor = Colors.grey; // Default for other statuses
+                }
+
+                // Check for status change from "Pending" to "Done"
+                if (lastKnownStatuses[orderId] == 'pending' && orderStatus.toLowerCase() == 'done') {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _showOrderPreparedDialog(context, orderId);
+                  });
+                }
+
+                // Update last known status for this order
+                lastKnownStatuses[orderId] = orderStatus.toLowerCase();
+
                 return Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Card(
-                    color: Color(0xFF1B3C3D),
+                    color: const Color(0xFF1B3C3D),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: ListTile(
                       title: Text(
-                        'Order Number: ${order['orderId']}',
-                        style: TextStyle(
+                        'Order Number: $orderId',
+                        style: const TextStyle(
                           fontFamily: 'Oswald',
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -61,9 +126,12 @@ class OrderHistoryPage extends StatelessWidget {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          const SizedBox(height: 8),
+                          ...itemWidgets, // Display all the items
+                          const SizedBox(height: 8),
                           Text(
-                            'Items: ${order['items']}',
-                            style: TextStyle(
+                            'Order Type: $orderType',
+                            style: const TextStyle(
                               fontFamily: 'Oswald',
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -71,8 +139,8 @@ class OrderHistoryPage extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Order Type: ${order['orderType']}',
-                            style: TextStyle(
+                            'Order Date: $timestamp',
+                            style: const TextStyle(
                               fontFamily: 'Oswald',
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -80,8 +148,8 @@ class OrderHistoryPage extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Extra Instructions: ${order['extrainstructions'] ?? "None"}',
-                            style: TextStyle(
+                            'Total Amount: Rs $totalAmount (Including GST: Rs $gst)',
+                            style: const TextStyle(
                               fontFamily: 'Oswald',
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -89,21 +157,28 @@ class OrderHistoryPage extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Order Date: ${DateFormat('dd MMMM yyyy').format(order['time'].toDate())}', // Example format
-                            style: TextStyle(
+                            'Final Amount: Rs $finalAmount',
+                            style: const TextStyle(
                               fontFamily: 'Oswald',
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
                           ),
-                          Text(
-                            'Status: ${order['orderstatus']}',
-                            style: TextStyle(
-                              fontFamily: 'Oswald',
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              'Order Status: ${orderStatus[0].toUpperCase()}${orderStatus.substring(1)}', // Capitalize first letter
+                              style: const TextStyle(
+                                fontFamily: 'Oswald',
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ],
@@ -117,9 +192,9 @@ class OrderHistoryPage extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: BottomAppBar(
-        color: Color(0xFF1B3C3D),
+        color: const Color(0xFF1B3C3D),
         child: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -127,6 +202,42 @@ class OrderHistoryPage extends StatelessWidget {
       ),
     );
   }
+
+  // Function to display the order prepared dialog
+  void _showOrderPreparedDialog(BuildContext context, String orderId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1B3C3D),
+          title: const Text(
+            'Order Prepared!',
+            style: TextStyle(
+              fontFamily: 'Oswald',
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          content: Text(
+            'Your order #$orderId has been prepared and is ready for pickup/delivery.',
+            style: const TextStyle(
+              fontFamily: 'Oswald',
+              color: Colors.white,
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text(
+                'OK',
+                style: TextStyle(color: Colors.white),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
-
-

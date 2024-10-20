@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart'; 
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'orderlistpage.dart';
 import 'dart:async'; // For managing timer for error message removal
@@ -35,7 +35,7 @@ class _MenuEditPageState extends State<MenuEditPage> {
     fetchMenuData();
   }
 
- Future<void> fetchMenuData({bool preserveSelectedMealType = false}) async {
+  Future<void> fetchMenuData({bool preserveSelectedMealType = false}) async {
     setState(() {
       isLoading = true; // Start loading
     });
@@ -44,6 +44,7 @@ class _MenuEditPageState extends State<MenuEditPage> {
           .collection('restaurant')
           .doc(widget.Rid)
           .get();
+
       if (restaurantQuery.exists) {
         final mealTypesRef = restaurantQuery.reference.collection('menuItems').doc('MealTypes');
 
@@ -57,23 +58,30 @@ class _MenuEditPageState extends State<MenuEditPage> {
                 mealSelections[capitalize(mealType)] = true;
                 menuData[capitalize(mealType)] = mealCollectionSnapshot.docs
                     .map((doc) => {
-                          'itemId': doc.id,
-                          'itemname': doc['itemname'],
-                          'itemimage': doc['itemimage']?.isNotEmpty == true
-                              ? doc['itemimage']
-                              : "https://th.bing.com/th/id/OIP.xMGhvTUooiLk2wpYCa7R1QHaHa?w=170&h=180&c=7&r=0&o=5&pid=1.7",
-                          'description': doc['description'],
-                          'ingredients': doc['ingredients'],
-                          'isveg': doc['isveg'],
-                          'small': doc['small'],
-                          'medium': doc['medium'],
-                          'view': doc['view'],
-                        })
+                  'itemId': doc.id,
+                  'itemname': doc['itemname'] ?? 'Unknown item', // Handle null itemname
+                  'itemimage': (doc['itemimage'] != null && doc['itemimage'].isNotEmpty)
+                      ? doc['itemimage']
+                      : "https://static.vecteezy.com/system/resources/previews/022/014/063/original/missing-picture-page-for-website-design-or-mobile-app-design-no-image-available-icon-vector.jpg", // Handle null or empty itemimage
+                  'description': doc['description'] ?? 'No description available', // Handle null description
+                  'ingredients': doc['ingredients'] ?? 'No ingredients specified', // Handle null ingredients
+                  'isveg': doc['isveg'] ?? false, // Handle null isveg, default to false
+                  'small': doc.data().containsKey('small') && doc['small'] != null
+                      ? doc['small']
+                      : 'N/A', // Handle missing or null small size
+                  'medium': doc.data().containsKey('medium') && doc['medium'] != null
+                      ? doc['medium']
+                      : 'N/A', // Handle missing or null medium size
+                  'large': doc.data().containsKey('large') && doc['large'] != null
+                      ? doc['large']
+                      : 'N/A', // Handle missing or null large size
+                  'view': doc['view'] ?? 'hidden', // Handle null view, default to 'hidden'
+                })
                     .where((item) {
-                      print("Item name: ${item['itemname']}, View: ${item['view']}, Veg: ${item['isveg']}");
-                      return (isVeg ? item['isveg'] == true : item['isveg'] == false) &&
-                          item['view'] == 'show';
-                    })
+                  print("Item name: ${item['itemname']}, View: ${item['view']}, Veg: ${item['isveg']}");
+                  return isVeg ? item['isveg'] == true : item['isveg'] == false;
+                })
+                    .where((item) => item['view'] == 'show') // Filter by visible items
                     .toList();
               });
             } else {
@@ -89,10 +97,12 @@ class _MenuEditPageState extends State<MenuEditPage> {
           }
         }
 
-        // Set the first available meal type as the default selected, only if not preserving
-        if (!preserveSelectedMealType) {
-          selectedMealType = mealSelections.entries.firstWhere((entry) => entry.value, orElse: () => MapEntry('', false)).key;
-        }
+        // Optionally preserve selected meal type
+        // if (!preserveSelectedMealType) {
+        //   selectedMealType = mealSelections.entries
+        //       .firstWhere((entry) => entry.value, orElse: () => MapEntry('', false))
+        //       .key;
+        // }
       } else {
         print('No document found with Rid: ${widget.Rid}');
       }
@@ -105,7 +115,77 @@ class _MenuEditPageState extends State<MenuEditPage> {
     }
   }
 
-  
+
+  Future<void> performSearch(String query) async {
+    setState(() {
+      searchQuery = query;
+    });
+
+    try {
+      final restaurantQuery = await FirebaseFirestore.instance
+          .collection('restaurant')
+          .doc(widget.Rid)  // Ensure we search in the correct restaurant
+          .get();
+
+      print('Searching in restaurant with Rid: ${widget.Rid}');
+      if (restaurantQuery.exists) {
+        final mealTypesRef = restaurantQuery.reference.collection('menuItems').doc('MealTypes');
+
+        // Clear current search results
+        menuData = {};
+
+        // List of meal types to search
+        final mealTypes = ['breakfast', 'lunch', 'snacks', 'dinner'];
+
+        for (var mealType in mealTypes) {
+          try {
+            final mealCollectionSnapshot = await mealTypesRef.collection(mealType)
+                .where('itemname', isGreaterThanOrEqualTo: query)
+                .where('itemname', isLessThanOrEqualTo: query + '\uf8ff')  // Perform search
+                .get();
+
+            if (mealCollectionSnapshot.docs.isNotEmpty) {
+              setState(() {
+                mealSelections[capitalize(mealType)] = true;
+                menuData[capitalize(mealType)] = mealCollectionSnapshot.docs.map((doc) {
+                  Map<String, dynamic> itemData = {
+                    'itemname': doc['itemname'] ?? 'Unknown item', // Add default values
+                    'itemimage': (doc['itemimage'] != null && doc['itemimage'].isNotEmpty)
+                        ? doc['itemimage']
+                        : "https://th.bing.com/th/id/OIP.xMGhvTUooiLk2wpYCa7R1QHaHa?w=170&h=180&c=7&r=0&o=5&pid=1.7",
+                    'description': doc['description'] ?? 'No description available',
+                    'isveg': doc['isveg'] ?? false,
+                    'documentId': doc.id,
+                  };
+
+                  if (doc.data().containsKey('small') && doc['small'] != null) {
+                    itemData['small'] = doc['small'];
+                  }
+                  if (doc.data().containsKey('medium') && doc['medium'] != null) {
+                    itemData['medium'] = doc['medium'];
+                  }
+                  if (doc.data().containsKey('large') && doc['large'] != null) {
+                    itemData['large'] = doc['large'];
+                  }
+
+                  return itemData;
+                }).toList();
+              });
+            } else {
+              setState(() {
+                menuData[capitalize(mealType)] = [];
+              });
+            }
+          } catch (e) {
+            print('Error searching $mealType collection: $e');
+          }
+        }
+      }
+    } catch (e) {
+      print('Error searching for items: $e');
+    }
+  }
+
 
   String capitalize(String s) => s[0].toUpperCase() + s.substring(1);
 
@@ -254,6 +334,31 @@ class _MenuEditPageState extends State<MenuEditPage> {
         child: Column(
           children: [
             // Search bar
+            TextField(
+                  onChanged: (value) {
+                    performSearch(value);  // Call the search method
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search the item to be edited/deleted....',
+                    prefixIcon: Icon(Icons.search),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                      borderSide: BorderSide(
+                        color: Colors.black,
+                        width: 1.0,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                      borderSide: BorderSide(
+                        color: Colors.black, // Set the focused border color to black
+                        width: 2.0,
+                      ),
+                    ),
+                  ),
+                ),
             SizedBox(height: 10),
 
             // Meal category buttons using Wrap
@@ -313,7 +418,7 @@ class _MenuEditPageState extends State<MenuEditPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => addItemPage(widget.Rid),
+                        builder: (context) => AddItemPage(widget.Rid),
                       ),
                     );
                   },
@@ -331,7 +436,7 @@ class _MenuEditPageState extends State<MenuEditPage> {
   }
 
   Widget _buildBottomNavigationBar() {
-    return Container (
+    return Container(
         color: Color(0xFF1B3C3D),
         height: 50,
         child: Row(
@@ -472,11 +577,11 @@ class _MenuEditPageState extends State<MenuEditPage> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: Image.network(
-                    item['itemimage'] ?? 'https://th.bing.com/th/id/OIP.xMGhvTUooiLk2wpYCa7R1QHaHa?w=170&h=180&c=7&r=0&o=5&pid=1.7',
+                    item['itemimage'] ?? 'https://static.vecteezy.com/system/resources/previews/022/014/063/original/missing-picture-page-for-website-design-or-mobile-app-design-no-image-available-icon-vector.jpg',
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Image.network(
-                        'https://th.bing.com/th/id/OIP.xMGhvTUooiLk2wpYCa7R1QHaHa?w=170&h=180&c=7&r=0&o=5&pid=1.7',
+                        'https://static.vecteezy.com/system/resources/previews/022/014/063/original/missing-picture-page-for-website-design-or-mobile-app-design-no-image-available-icon-vector.jpg',
                         fit: BoxFit.cover,
                       );
                     },
@@ -491,7 +596,7 @@ class _MenuEditPageState extends State<MenuEditPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      item['itemname'],
+                      item['itemname']?? 'Unknown item',
                       maxLines: 1, // Show only one line
                       overflow: TextOverflow.ellipsis, // Truncate the text if it exceeds one line
                       style: TextStyle(
@@ -502,7 +607,7 @@ class _MenuEditPageState extends State<MenuEditPage> {
                     ),
                     SizedBox(height: 5),
                     Text(
-                      item['description'],
+                      item['description'] ?? 'No description available',
                       maxLines: 2, // Show only two lines
                       overflow: TextOverflow.ellipsis, // Truncate the text if it exceeds two lines
                       style: TextStyle(

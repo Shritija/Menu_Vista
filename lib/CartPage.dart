@@ -7,8 +7,7 @@ import 'OrderHistoryPage.dart';
 import 'AboutUsPage.dart';
 import 'ProfilePage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:cloud_functions/cloud_functions.dart';
+
 
 class CartPage extends StatefulWidget {
   final String? userId; // Accept userId as a nullable parameter
@@ -92,6 +91,7 @@ class _CartPageState extends State<CartPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        backgroundColor: Color(0xFFEAFCFA),
         appBar: AppBar(
           automaticallyImplyLeading: false,
           backgroundColor: Color(0xFF1B3C3D),
@@ -435,29 +435,24 @@ class _CartPageState extends State<CartPage> {
         padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
       ),
       onPressed: () {
+        // Calculate the total amount based on the cart items
         double totalAmount = cartItems.fold(0.0, (sum, item) {
           var data = item.data() as Map<String, dynamic>;
           return sum + (data['price'] * data['quantity']);
         });
-        //  FirebaseMessaging.instance.getToken().then((token) {
-        //                         // Assuming you have the `orderId` accessible here, or you can save the token when the user logs in.
-        //                         FirebaseFirestore.instance.collection('orders').doc(orderId).update({
-        //                           'deviceToken': token,
-        //                         });
-        //                       });
-          Navigator.push(
+
+        // Navigate to the PaymentPage, passing userId, restaurantId, and totalAmount
+        Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => PaymentPage(
-              cartItems: cartItems,
-              orderId: 'your_order_id_here',
-              customerId: 'your_customer_id_here',
-              totalAmount: totalAmount,
+              userId: widget.userId,         // Send the userId
+              restaurantId: widget.restaurantId, // Send the restaurantId
+              totalAmount: totalAmount,      // Send the totalAmount
             ),
           ),
         );
       },
-
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -466,4 +461,5 @@ class _CartPageState extends State<CartPage> {
       ),
     );
   }
+
 }

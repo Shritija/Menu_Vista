@@ -128,31 +128,32 @@ class _EditMenuItemPageState extends State<EditMenuItemPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFFEAFCFA),
       appBar: AppBar(
-          automaticallyImplyLeading: false,
-          backgroundColor: Color(0xFF1B3C3D),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: Center(
-            child: Image.asset(
-              'assets/images/MenuVistaicon.png',
-              height: 50,
-              width: 200,
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon: Image.asset(
-                'assets/images/topmenuicon.png',
-                height: 50,
-                width: 50,
-              ),
-              onPressed: () {},
-            ),
-          ],
+        automaticallyImplyLeading: false,
+        backgroundColor: Color(0xFF1B3C3D),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
+        title: Center(
+          child: Image.asset(
+            'assets/images/MenuVistaicon.png',
+            height: 50,
+            width: 200,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Image.asset(
+              'assets/images/topmenuicon.png',
+              height: 50,
+              width: 50,
+            ),
+            onPressed: () {},
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -175,51 +176,80 @@ class _EditMenuItemPageState extends State<EditMenuItemPage> {
                     SizedBox(height: 16),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey, // Consistent button color
-                      ),
+                            elevation: 3,
+                            backgroundColor: Color(0xFF1B3C3D), // Dark green color
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            minimumSize: Size(100, 40), 
+                            // Set width and height (width, height)
+                    ),
                       onPressed: _pickImage,
-                      child: Text('Change Image'),
+                      child: Text('Change Image', style: TextStyle(fontFamily: 'Oswald',
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold)),
                     ),
                     SizedBox(height: 16),
-                  ],
-                ),
-                SizedBox(height: 16),// Veg/Non-Veg Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isVeg ? Colors.green : Colors.grey,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          isVeg = true;
-                        });
-                      },
-                      child: Text('Veg'),
-                    ),
-                    SizedBox(width: 10),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: !isVeg ? Colors.red : Colors.grey,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          isVeg = false;
-                        });
-                      },
-                      child: Text('Non-Veg'),
-                    ),
                   ],
                 ),
                 SizedBox(height: 16),
                 _buildTextInput('Item Name', _itemName, (value) => _itemName = value),
                 _buildTextInput('Description', _description, (value) => _description = value, maxLines: 3),
                 _buildTextInput('Ingredients', _ingredients, (value) => _ingredients = value, maxLines: 3),
+                SizedBox(height: 16),// Veg/Non-Veg Buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                     Text("Type: "),
+                    SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          isVeg = true; // Set to Veg
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isVeg ? Colors.green : Colors.grey, // Green if selected, grey otherwise
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: Text("Veg", style: TextStyle(fontFamily: 'Oswald', color: Colors.black)),
+                    ),
+                    SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          isVeg = false; // Set to Non-Veg
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: !isVeg ? Colors.red : Colors.grey, // Red if selected, grey otherwise
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: Text("Non-Veg", style: TextStyle(fontFamily: 'Oswald', color: Colors.black)),
+                    ),
+                  ],
+                ),
                 SizedBox(height: 16),
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                            elevation: 3,
+                            backgroundColor: Color(0xFF1B3C3D), // Dark green color
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            minimumSize: Size(100, 40), 
+                            // Set width and height (width, height)
+                    ),
                   onPressed: _updateMenuItem,
-                  child: Text('Update Item'),
+                  child: Text('Update Item', style: TextStyle(fontFamily: 'Oswald',
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold)),
                 ),
               ],
           ),
@@ -240,6 +270,16 @@ class _EditMenuItemPageState extends State<EditMenuItemPage> {
         initialValue: initialValue,
         decoration: InputDecoration(
           labelText: label,
+          floatingLabelStyle: TextStyle(
+                          color: Color.fromARGB(255, 255, 222, 89),
+                          shadows: [
+                            Shadow(
+                              color: Colors.black,
+                              offset: Offset(2.0, 2.0),
+                              blurRadius: 1.0,
+                            )
+                          ],
+                        ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
             borderSide: BorderSide.none,
@@ -255,7 +295,7 @@ class _EditMenuItemPageState extends State<EditMenuItemPage> {
   }
 
   Widget _buildBottomNavigationBar() {
-    return Container (
+    return Container(
         color: Color(0xFF1B3C3D),
         height: 50,
         child: Row(
