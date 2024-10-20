@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 
-class OrderHistoryPage extends StatelessWidget {
+class OrderHistoryPage extends StatefulWidget {
   final String? documentId;
+
   OrderHistoryPage({required this.documentId});
+
+  @override
+  _OrderHistoryPageState createState() => _OrderHistoryPageState();
+}
+
+class _OrderHistoryPageState extends State<OrderHistoryPage> {
+  Map<String, String> lastKnownStatuses = {}; // Track the status of each order
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,7 +33,7 @@ class OrderHistoryPage extends StatelessWidget {
         child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('orders')
-              .where('customerId', isEqualTo: documentId)
+              .where('customerId', isEqualTo: widget.documentId)
               .snapshots(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
@@ -78,6 +85,8 @@ class OrderHistoryPage extends StatelessWidget {
                     ),
                   );
                 }
+
+                // Define status colors
                 Color statusColor;
                 if (orderStatus.toLowerCase() == 'done') {
                   statusColor = Colors.lightGreenAccent;
@@ -86,6 +95,17 @@ class OrderHistoryPage extends StatelessWidget {
                 } else {
                   statusColor = Colors.grey; // Default for other statuses
                 }
+
+                // Check for status change from "Pending" to "Done"
+                if (lastKnownStatuses[orderId] == 'pending' && orderStatus.toLowerCase() == 'done') {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _showOrderPreparedDialog(context, orderId);
+                  });
+                }
+
+                // Update last known status for this order
+                lastKnownStatuses[orderId] = orderStatus.toLowerCase();
+
                 return Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Card(
@@ -152,7 +172,7 @@ class OrderHistoryPage extends StatelessWidget {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
-                              'Order Status: $orderStatus',
+                              'Order Status: ${orderStatus[0].toUpperCase()}${orderStatus.substring(1)}', // Capitalize first letter
                               style: const TextStyle(
                                 fontFamily: 'Oswald',
                                 fontSize: 16,
@@ -180,6 +200,44 @@ class OrderHistoryPage extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+
+  // Function to display the order prepared dialog
+  void _showOrderPreparedDialog(BuildContext context, String orderId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1B3C3D),
+          title: const Text(
+            'Order Prepared!',
+            style: TextStyle(
+              fontFamily: 'Oswald',
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          content: Text(
+            'Your order #$orderId has been prepared and is ready for pickup/delivery.',
+            style: const TextStyle(
+              fontFamily: 'Oswald',
+              color: Colors.white,
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text(
+                'OK',
+                style: TextStyle(color: Colors.white),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

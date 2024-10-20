@@ -12,11 +12,13 @@ import 'ProfilePage.dart';
 import 'RestaurantSignUpPage.dart';
 import 'ReviewPage.dart';
 import 'SignUpPage.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:cloud_functions/cloud_functions.dart';
+import 'order_status_notifier.dart';
+import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase for web or other platforms
   if (kIsWeb) {
     await Firebase.initializeApp(
       options: const FirebaseOptions(
@@ -33,7 +35,16 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
   }
-  runApp(MenuVistaApp());
+
+  // Wrap the app in MultiProvider to provide OrderStatusNotifier globally
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => OrderStatusNotifier()),
+      ],
+      child: MenuVistaApp(),
+    ),
+  );
 }
 
 class MenuVistaApp extends StatelessWidget {

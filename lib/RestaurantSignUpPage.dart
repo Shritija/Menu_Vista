@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
-
+// Saish@1609
 class RestaurantSignUpPage extends StatefulWidget {
   @override
   _RestaurantSignUpPageState createState() => _RestaurantSignUpPageState();
@@ -35,6 +35,14 @@ class _RestaurantSignUpPageState extends State<RestaurantSignUpPage> {
     if (!await isEmailRegistered(email)) {
       setState(() {
         errorMessage = 'Please enter a valid Google account email.';
+      });
+      return;
+    }
+
+    // Validate the password before proceeding
+    if (!validatePassword(password)) {
+      setState(() {
+        errorMessage = 'Password must be at least 8 characters long, contain at least 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character.';
       });
       return;
     }
@@ -241,3 +249,16 @@ class _RestaurantSignUpPageState extends State<RestaurantSignUpPage> {
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
