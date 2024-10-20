@@ -124,7 +124,8 @@ class _MenuPageState extends State<MenuPage> {
                     'itemimage': doc['itemimage'],
                     'description': doc['description'],
                     'isveg': doc['isveg'],
-                    'documentId': doc.id, // Store documentId for navigation
+                    'documentId': doc.id, 
+                    'view': doc['view'] ?? 'deleted',// Store documentId for navigation
                   };
 
                   // Check and include only available sizes
@@ -141,6 +142,7 @@ class _MenuPageState extends State<MenuPage> {
                   return itemData;
                 })
                     .where((item) => isVeg ? item['isveg'] == true : item['isveg'] == false)
+                    .where((item) => item['view'] == 'show') 
                     .toList();
               });
             } else {

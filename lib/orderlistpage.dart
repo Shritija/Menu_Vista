@@ -7,6 +7,7 @@ import 'orderdetails.dart';
 import 'LoginPage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'AboutUsPage.dart';
 
 
 class OrderListPage extends StatefulWidget {
@@ -178,12 +179,12 @@ void initState() {
                       (route) => false,
                 );
               } else if (value == 'about_us') {
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(
-                //     builder: (context) => AboutUsPage(),
-                //   ),
-                // );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AboutUsPage(),
+                  ),
+                );
               }
             },
           ),
