@@ -16,6 +16,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   bool rememberMe = false;
   String errorMessage = '';
+  String rid = 'PR5Gs3rUuEvPK6HvCZcl';
   Timer? _timer;
   bool isRestaurantLogin = false; // Toggle for restaurant/user login
 
@@ -232,7 +233,7 @@ class _LoginPageState extends State<LoginPage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => UnderConstructionPage(),
+                                  builder: (context) => OrderListPage(restaurantId: rid),
                                 ),
                               );
                             } else {
