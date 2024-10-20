@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'LoginPage.dart';
-import 'RestaurantListPage.dart';
 import 'OrderHistoryPage.dart';
 import 'AboutUsPage.dart';
 import 'CartPage.dart';
