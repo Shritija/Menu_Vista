@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
+import 'MenuPage.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import 'LoginPage.dart';
 import 'OrderHistoryPage.dart';
 import 'MenuPage.dart';
 import 'ProfilePage.dart';
 import 'AboutUsPage.dart';
-
 
 class RestaurantListPage extends StatefulWidget {
   @override
@@ -21,6 +25,87 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   bool _isLoading = false;
   String _searchQuery = '';
   bool _searchPerformed = false;
+  String? userEmail;
+  String? userDocumentId;
+  List<String> favoriteRestaurantIds = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavorites();
+  }
+
+
+  // Function to load user favorites from Firestore
+  Future<void> _loadFavorites() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Get the current user's email
+      userEmail = FirebaseAuth.instance.currentUser?.email;
+
+      if (userEmail != null) {
+        // Query the user's document based on the email
+        QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: userEmail)
+            .get();
+
+        if (userSnapshot.docs.isNotEmpty) {
+          // Get the user's document ID
+          userDocumentId = userSnapshot.docs.first.id;
+
+          // Fetch the user's favorite restaurants from the document
+          DocumentSnapshot userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userDocumentId)
+              .get();
+
+          if (userDoc.exists) {
+            // Get the list of favorite restaurant IDs
+            favoriteRestaurantIds = List<String>.from(userDoc['favorites'] ?? []);
+
+            // Fetch the favorite restaurants from the restaurant collection
+            if (favoriteRestaurantIds.isNotEmpty) {
+              QuerySnapshot favoriteSnapshot = await FirebaseFirestore.instance
+                  .collection('restaurant')
+                  .where(FieldPath.documentId, whereIn: favoriteRestaurantIds)
+                  .get();
+
+              List<Map<String, dynamic>> favorites = favoriteSnapshot.docs.map((doc) {
+                return {
+                  'Rid': doc.id,
+                  'name': doc['Rname'],
+                  'address': doc['address'],
+                  'isFavorite': true, // Mark as favorite
+                };
+              }).toList();
+
+              setState(() {
+                _favorites = favorites;
+                // Display favorites immediately below the search bar
+                _restaurants = _favorites; // Set the restaurants to favorites
+              });
+            } else {
+              // If no favorites, ensure the list is empty
+              setState(() {
+                _favorites = [];
+                _restaurants = [];
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('Error loading favorites: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   // Firestore query function to search for restaurants
   Future<void> searchRestaurants(String query) async {
@@ -38,21 +123,20 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
 
       List<Map<String, dynamic>> restaurants = snapshot.docs.map((doc) {
         return {
-          'Rid': doc.id, // Adding Rid
+          'Rid': doc.id,
           'name': doc['Rname'],
           'address': doc['address'],
-          'isFavorite': false, // Initially, no restaurant is favorited
+          'isFavorite': favoriteRestaurantIds.contains(doc.id), // Check if it's a favorite
         };
       }).toList();
 
-      // Store the original order of restaurants
       _originalRestaurants = List<Map<String, dynamic>>.from(restaurants);
 
-      restaurants.removeWhere((r) => _favorites.any((fav) => fav['name'] == r['name']));
+      restaurants.removeWhere((r) => _favorites.any((fav) => fav['Rid'] == r['Rid']));
       List<Map<String, dynamic>> combinedList = _favorites + restaurants;
 
       setState(() {
-        _restaurants = combinedList; // Update the restaurant list with favorites on top
+        _restaurants = combinedList;
         _isLoading = false;
       });
     } catch (e) {
@@ -65,19 +149,37 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   }
 
   // Function to toggle the favorite status of a restaurant
-  void toggleFavorite(Map<String, dynamic> restaurant) {
+  void toggleFavorite(Map<String, dynamic> restaurant) async {
     setState(() {
-      restaurant['isFavorite'] = !restaurant['isFavorite']; // Toggle favorite state
-
-      if (restaurant['isFavorite']) {
-        _favorites.add(restaurant); // Add to favorites
-        _restaurants.remove(restaurant); // Remove from the regular list
-        _restaurants.insert(0, restaurant); // Insert at the top of the list
-      } else {
-        _favorites.removeWhere((fav) => fav['name'] == restaurant['name']);
-        _restaurants.remove(restaurant);
-      }
+      restaurant['isFavorite'] = !restaurant['isFavorite'];
     });
+
+    try {
+      if (restaurant['isFavorite']) {
+        // Add to favorites
+        setState(() {
+          _favorites.add(restaurant);
+          _restaurants.remove(restaurant);
+          _restaurants.insert(0, restaurant); // Add to the top
+        });
+        favoriteRestaurantIds.add(restaurant['Rid']);
+      } else {
+        // Remove from favorites
+        setState(() {
+          _favorites.removeWhere((fav) => fav['Rid'] == restaurant['Rid']);
+          _restaurants.remove(restaurant);
+        });
+        favoriteRestaurantIds.remove(restaurant['Rid']);
+      }
+
+      // Update the user's favorites in Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userDocumentId)
+          .update({'favorites': favoriteRestaurantIds});
+    } catch (e) {
+      print('Error updating favorites: $e');
+    }
   }
 
   @override
@@ -147,65 +249,64 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
             ];
           },
           onSelected: (String value) async {
-            String email = FirebaseAuth.instance.currentUser?.email ?? '';
+    String email = FirebaseAuth.instance.currentUser?.email ?? '';
 
-            if (value == 'profile') {
-              if (email.isNotEmpty) {
-                QuerySnapshot userSnapshot = await FirebaseFirestore.instance
-                    .collection('users')
-                    .where('email', isEqualTo: email)
-                    .get();
+    if (value == 'profile') {
+    if (email.isNotEmpty) {
+    QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: email)
+        .get();
 
-                if (userSnapshot.docs.isNotEmpty) {
-                  String documentId = userSnapshot.docs.first.id;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ProfilePage(documentId: documentId),
-                    ),
-                  );
-                } else {
-                  print('User document not found.');
-                }
-              } else {
-                print('No user is currently logged in.');
-              }
-            } else if (value == 'order_history') {
-              if (email.isNotEmpty) {
-                QuerySnapshot userSnapshot = await FirebaseFirestore.instance
-                    .collection('users')
-                    .where('email', isEqualTo: email)
-                    .get();
+    if (userSnapshot.docs.isNotEmpty) {
+    String documentId = userSnapshot.docs.first.id;
+    Navigator.push(
+    context,
+    MaterialPageRoute(
+    builder: (context) => ProfilePage(documentId: documentId),
+    ),
+    );
+    } else {
+    print('User document not found.');
+    }
+    } else {
+    print('No user is currently logged in.');
+    }
+    } else if (value == 'order_history') {
+    if (email.isNotEmpty) {
+    QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: email)
+        .get();
 
-                if (userSnapshot.docs.isNotEmpty) {
-                  String documentId = userSnapshot.docs.first.id;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => OrderHistoryPage(documentId: documentId),
-                    ),
-                  );
-                } else {
-                  print('User document not found.');
-                }
-              }
-            } else if (value == 'logout') {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => LoginPage()),
-                    (route) => false,
-              );
-            } else if (value == 'about_us') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AboutUsPage(),
-                ),
-              );
-            }
-          },
+    if (userSnapshot.docs.isNotEmpty) {
+    String documentId = userSnapshot.docs.first.id;
+    Navigator.push(
+    context,
+    MaterialPageRoute(
+    builder: (context) => OrderHistoryPage(documentId: documentId),
+    ),
+    );
+    } else {
+    print('User document not found.');
+    }
+    }
+    } else if (value == 'logout') {
+    Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (context) => LoginPage()),
+    (route) => false,
+    );
+    } else if (value == 'about_us') {
+    Navigator.push(
+    context,
+    MaterialPageRoute(
+    builder: (context) => AboutUsPage(),
+    ),
+    );
+    }
+    },
         ),
-
         title: Center(
           child: Image.asset(
             'assets/images/MenuVistaicon.png',
@@ -221,7 +322,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
               width: 50,
             ),
             onPressed: () {
-              // Currently does nothing, it's a blank space
+              // No action currently
             },
           ),
         ],
@@ -230,18 +331,18 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Search Box
             TextField(
               onChanged: (value) {
                 setState(() {
-                  _searchQuery = value; // Update the search query
+                  _searchQuery = value;
                 });
                 if (value.isNotEmpty) {
-                  searchRestaurants(value); // Call the search function
+                  searchRestaurants(value);
                 } else {
+                  // Reset the restaurant list to show all favorites if no search query
                   setState(() {
-                    _restaurants = _favorites; // Only show favorites if search is empty
-                    _searchPerformed = false; // Reset the search indicator
+                    _restaurants = _favorites; // Show only favorites when search is cleared
+                    _searchPerformed = false;
                   });
                 }
               },
@@ -253,50 +354,46 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10.0),
                   borderSide: BorderSide(
-                    color: Colors.black, // Set the border color to black
+                    color: Colors.black,
                     width: 1.0,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10.0),
                   borderSide: BorderSide(
-                    color: Colors.black, // Set the focused border color to black
+                    color: Colors.black,
                     width: 2.0,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10.0),
                   borderSide: BorderSide(
-                    color: Colors.black, // Set the enabled border color to black
+                    color: Colors.black,
                     width: 1.0,
                   ),
                 ),
               ),
             ),
-
             SizedBox(height: 20),
-            // Scrollable list of restaurants
             Expanded(
               child: _isLoading
                   ? Center(child: CircularProgressIndicator())
                   : _restaurants.isEmpty && _searchPerformed
                   ? Center(
-                child: Container(
-                 child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'assets/images/notfound.png',  // Add your image path here
-                        height: 220, // Adjust height as needed
-                        width: 220,  // Adjust width as needed
-                      ),
-                      SizedBox(height: 16), // Add some space between the image and text
-                      Text(
-                        'Restaurant Not Found',
-                        style: TextStyle(fontSize: 12), // Customize text style if needed
-                      ),
-                    ],
-                  ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/notfound.png',
+                      height: 220,
+                      width: 220,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Restaurant Not Found',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ],
                 ),
               )
                   : SingleChildScrollView(
@@ -304,12 +401,11 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                   children: _restaurants.map((restaurant) {
                     return GestureDetector(
                       onTap: () {
-                        // Navigate to MenuPage with Rid
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => MenuPage(
-                              Rid: restaurant['Rid'], // Passing Rid to MenuPage
+                              Rid: restaurant['Rid'],
                             ),
                           ),
                         );
@@ -328,7 +424,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                           ],
                         ),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0), // Adjust the vertical padding as needed
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -362,7 +458,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                                       : Colors.grey,
                                 ),
                                 onPressed: () {
-                                  toggleFavorite(restaurant); // Toggle favorite state
+                                  toggleFavorite(restaurant);
                                 },
                               ),
                             ],
@@ -380,3 +476,4 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     );
   }
 }
+

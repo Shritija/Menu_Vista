@@ -1,3 +1,18 @@
+// Project-level build.gradle
+
+buildscript {
+    repositories {
+        google()  // Ensure this is included
+        mavenCentral()
+    }
+    // Add this in your buildscript.dependencies section
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.0.4' // Check for the latest version compatible with your Flutter
+        classpath 'com.google.gms:google-services:4.3.15' // Google Services plugin
+    }
+
+}
+
 allprojects {
     repositories {
         google()
@@ -16,5 +31,3 @@ subprojects {
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
-
-

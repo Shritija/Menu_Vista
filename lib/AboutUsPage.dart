@@ -56,59 +56,63 @@ class AboutUsPage extends StatelessWidget {
     );
   }
 
-  // Widget to build person info
+// Widget to build person info
   Widget buildPersonInfo(String name, String college, String motto) {
     return Flexible(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Color(0xFF1B3C3D), // Background color
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
-                spreadRadius: 2,
-                blurRadius: 5,
-                offset: Offset(0, 3),
-              ),
-            ],
-          ),
-          padding: EdgeInsets.all(12.0), // Reduced padding for compactness
-          child: FittedBox( // FittedBox to scale text to fit
-            fit: BoxFit.scaleDown,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Name: $name',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16, // Reduced font size
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  'College: $college',
-                  style: TextStyle(
-                    fontSize: 14, // Reduced font size
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  'Motto: $motto',
-                  style: TextStyle(
-                    fontSize: 14, // Reduced font size
-                    color: Colors.white,
-                  ),
+        child: SizedBox(
+          width: double.infinity, // Ensures it takes up the full available width
+          child: Container(
+            decoration: BoxDecoration(
+              color: Color(0xFF1B3C3D), // Background color
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: Offset(0, 3),
                 ),
               ],
+            ),
+            padding: EdgeInsets.all(20.0), // Padding for content
+            child: FittedBox( // FittedBox to scale text to fit
+              fit: BoxFit.scaleDown,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Name: $name',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16, // Reduced font size
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'College: $college',
+                    style: TextStyle(
+                      fontSize: 14, // Reduced font size
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'Motto: $motto',
+                    style: TextStyle(
+                      fontSize: 14, // Reduced font size
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
   }
+
 }

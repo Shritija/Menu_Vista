@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:menu_vista/RestaurantListPage.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'AboutUsPage.dart';
 import 'LoginPage.dart';
@@ -467,7 +468,7 @@ class _PaymentPageState extends State<PaymentPage> {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-            builder: (context) => OrderHistoryPage(documentId: widget.restaurantId)),
+            builder: (context) => RestaurantListPage()),
             (Route<dynamic> route) => false,
       );
     _showMessage('Payment Successful', 'Payment ID: ${response.paymentId}');

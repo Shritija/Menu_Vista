@@ -75,7 +75,7 @@ class _MenuEditPageState extends State<MenuEditPage> {
                   'large': doc.data().containsKey('large') && doc['large'] != null
                       ? doc['large']
                       : 'N/A', // Handle missing or null large size
-                  'view': doc['view'] ?? 'hidden', // Handle null view, default to 'hidden'
+                  'view': doc['view'] ?? 'deleted', // Handle null view, default to 'hidden'
                 })
                     .where((item) {
                   print("Item name: ${item['itemname']}, View: ${item['view']}, Veg: ${item['isveg']}");

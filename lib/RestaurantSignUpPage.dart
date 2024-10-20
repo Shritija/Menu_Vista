@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
-
+// Saish@1609
 class RestaurantSignUpPage extends StatefulWidget {
   @override
   _RestaurantSignUpPageState createState() => _RestaurantSignUpPageState();
@@ -22,6 +22,30 @@ class _RestaurantSignUpPageState extends State<RestaurantSignUpPage> {
     String contact = contactController.text;
     String address = addressController.text;
     String password = passwordController.text; // Get the password from the controller
+
+    // Validate the password before proceeding
+    if (!validatePassword(password)) {
+      setState(() {
+        errorMessage = 'Password must be at least 8 characters long, contain at least 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character.';
+      });
+      return;
+    }
+
+    // Check if the email is registered with Google
+    if (!await isEmailRegistered(email)) {
+      setState(() {
+        errorMessage = 'Please enter a valid Google account email.';
+      });
+      return;
+    }
+
+    // Validate the password before proceeding
+    if (!validatePassword(password)) {
+      setState(() {
+        errorMessage = 'Password must be at least 8 characters long, contain at least 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character.';
+      });
+      return;
+    }
 
     try {
       UserCredential userCredential = await FirebaseAuth.instance
@@ -57,6 +81,26 @@ class _RestaurantSignUpPageState extends State<RestaurantSignUpPage> {
         errorMessage = 'An error occurred: ${e.toString()}';
       });
     }
+  }
+
+  Future<bool> isEmailRegistered(String email) async {
+    try {
+      final signInMethods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+      // Check if Google is one of the sign-in methods
+      return signInMethods.contains('google.com');
+    } catch (e) {
+      setState(() {
+        errorMessage = 'An error occurred while checking the email: ${e.toString()}';
+      });
+      return false;
+    }
+  }
+
+  bool validatePassword(String password) {
+    // Regular expression to validate the password
+    final passwordPattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#\$&*~]).{8,}$';
+    final regExp = RegExp(passwordPattern);
+    return regExp.hasMatch(password);
   }
 
   @override
@@ -205,3 +249,16 @@ class _RestaurantSignUpPageState extends State<RestaurantSignUpPage> {
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
