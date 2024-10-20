@@ -434,13 +434,24 @@ class _CartPageState extends State<CartPage> {
         padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
       ),
       onPressed: () {
+        double totalAmount = cartItems.fold(0.0, (sum, item) {
+          var data = item.data() as Map<String, dynamic>;
+          return sum + (data['price'] * data['quantity']);
+        });
+
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PaymentPage(cartItems: cartItems),
+            builder: (context) => PaymentPage(
+              cartItems: cartItems,
+              orderId: 'your_order_id_here',
+              customerId: 'your_customer_id_here',
+              totalAmount: totalAmount,
+            ),
           ),
         );
       },
+
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

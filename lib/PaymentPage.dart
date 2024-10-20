@@ -3,9 +3,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 class PaymentPage extends StatefulWidget {
+  final String orderId;
+  final String customerId;
   final List<QueryDocumentSnapshot> cartItems;
+  final double totalAmount; // Total amount passed from CartPage
 
-  PaymentPage({required this.cartItems});
+  const PaymentPage({
+    Key? key,
+    required this.orderId,
+    required this.customerId,
+    required this.cartItems,
+    required this.totalAmount,
+  }) : super(key: key);
 
   @override
   _PaymentPageState createState() => _PaymentPageState();
@@ -13,7 +22,6 @@ class PaymentPage extends StatefulWidget {
 
 class _PaymentPageState extends State<PaymentPage> {
   late Razorpay _razorpay;
-  double totalAmount = 0.0;
   double gst = 0.0;
   double finalAmount = 0.0;
 
@@ -27,12 +35,9 @@ class _PaymentPageState extends State<PaymentPage> {
     _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
 
-    // Calculate the total amount, GST, and final amount
-    totalAmount = widget.cartItems.fold(0.0, (sum, item) {
-      return sum + (item['price'] * item['quantity']);
-    });
-    gst = totalAmount * 0.18;
-    finalAmount = totalAmount + gst;
+    // Calculate GST and final amount
+    gst = widget.totalAmount * 0.18; // Assuming 18% GST
+    finalAmount = widget.totalAmount + gst;
   }
 
   @override
@@ -45,7 +50,7 @@ class _PaymentPageState extends State<PaymentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Payment'),
+        title: const Text('Payment'),
         backgroundColor: Colors.teal[900],
       ),
       body: Padding(
@@ -53,8 +58,11 @@ class _PaymentPageState extends State<PaymentPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Order Summary', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            SizedBox(height: 10),
+            const Text(
+              'Order Summary',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
             Expanded(
               child: ListView.builder(
                 itemCount: widget.cartItems.length,
@@ -68,7 +76,7 @@ class _PaymentPageState extends State<PaymentPage> {
                 },
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             _paymentSummary(),
             _paymentMethods(),
           ],
@@ -81,11 +89,11 @@ class _PaymentPageState extends State<PaymentPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _summaryRow('Item total', 'Rs ${totalAmount.toStringAsFixed(2)}'),
+        _summaryRow('Item Total', 'Rs ${widget.totalAmount.toStringAsFixed(2)}'),
         _summaryRow('GST (18%)', 'Rs ${gst.toStringAsFixed(2)}'),
-        Divider(color: Colors.black),
+        const Divider(color: Colors.black),
         _summaryRow('Total to Pay', 'Rs ${finalAmount.toStringAsFixed(2)}', isBold: true),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
       ],
     );
   }
@@ -96,8 +104,20 @@ class _PaymentPageState extends State<PaymentPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: TextStyle(fontSize: 16, fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
-          Text(value, style: TextStyle(fontSize: 16, fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
         ],
       ),
     );
@@ -107,14 +127,15 @@ class _PaymentPageState extends State<PaymentPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Payment Methods', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        SizedBox(height: 10),
+        const Text(
+          'Payment Methods',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
         ListTile(
-          leading: Icon(Icons.payment),
-          title: Text('Pay with Razorpay'),
-          onTap: () {
-            _openRazorpayCheckout();
-          },
+          leading: const Icon(Icons.payment),
+          title: const Text('Pay with Razorpay'),
+          onTap: _openRazorpayCheckout,
         ),
       ],
     );
@@ -122,16 +143,16 @@ class _PaymentPageState extends State<PaymentPage> {
 
   void _openRazorpayCheckout() {
     var options = {
-      'key': 'YOUR_RAZORPAY_KEY',  // Replace with your Razorpay Key
-      'amount': (finalAmount * 100).toInt(), // Razorpay amount is in paise
+      'key': 'rzp_test_ZeSLXbwx3muqHX', // Replace with your Razorpay key
+      'amount': (finalAmount * 100).toInt(), // Amount in paise
       'name': 'Foodico Restaurant',
-      'description': 'Payment for your food order',
+      'description': 'Payment for your order',
       'prefill': {
         'contact': '1234567890', // Replace with actual contact
-        'email': 'test@example.com',  // Replace with actual email
+        'email': 'test@example.com', // Replace with actual email
       },
       'external': {
-        'wallets': ['paytm']
+        'wallets': ['paytm'],
       }
     };
 
@@ -142,54 +163,54 @@ class _PaymentPageState extends State<PaymentPage> {
     }
   }
 
-  void _handlePaymentSuccess(PaymentSuccessResponse response) {
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    await FirebaseFirestore.instance.collection('orders').doc(widget.orderId).set({
+      'orderId': widget.orderId,
+      'customerId': widget.customerId,
+      'items': widget.cartItems.map((item) => item.data()).toList(),
+      'totalAmount': widget.totalAmount,
+      'gst': gst,
+      'finalAmount': finalAmount,
+      'paymentStatus': 'Success',
+      'paymentId': response.paymentId,
+      'timestamp': Timestamp.now(),
+    });
+
+    _showMessage('Payment Successful', 'Payment ID: ${response.paymentId}');
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) async {
+    await FirebaseFirestore.instance.collection('orders').doc(widget.orderId).set({
+      'orderId': widget.orderId,
+      'customerId': widget.customerId,
+      'items': widget.cartItems.map((item) => item.data()).toList(),
+      'totalAmount': widget.totalAmount,
+      'gst': gst,
+      'finalAmount': finalAmount,
+      'paymentStatus': 'Failed',
+      'paymentId': null,
+      'timestamp': Timestamp.now(),
+    });
+
+    _showMessage('Payment Failed', 'Error: ${response.message}');
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    _showMessage('Wallet Selected', 'Wallet: ${response.walletName}');
+  }
+
+  void _showMessage(String title, String content) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Payment Successful'),
-        content: Text('Payment ID: ${response.paymentId}'),
+        title: Text(title),
+        content: Text(content),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.popUntil(context, ModalRoute.withName('/home'));
             },
-            child: Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _handlePaymentError(PaymentFailureResponse response) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Payment Failed'),
-        content: Text('Error: ${response.code}\nMessage: ${response.message}'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _handleExternalWallet(ExternalWalletResponse response) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('External Wallet Selected'),
-        content: Text('Wallet: ${response.walletName}'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('OK'),
+            child: const Text('OK'),
           ),
         ],
       ),

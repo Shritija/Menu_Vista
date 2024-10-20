@@ -42,8 +42,7 @@ dependencies:
   image_picker: ^1.0.0
   firebase_storage: ^12.3.3
   intl: ^0.17.0
-  upi_pay: ^1.0.1
-  url_launcher: ^6.3.1
+  razorpay_flutter: ^1.3.7
 
 
 dev_dependencies:
@@ -84,7 +83,6 @@ flutter:
     - assets/gpay_config.json
     - assets/images/home_white.png
     - assets/images/edit.png
-
     - assets/images/icon.png
     - assets/images/Empty-cart-1-512.png
     - assets/images/image_processing20200705-25128-1a0u0wj.gif
