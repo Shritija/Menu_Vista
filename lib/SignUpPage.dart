@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'RestaurantSignUpPage.dart';
-
+import 'package:google_sign_in/google_sign_in.dart';
 
 class SignUpPage extends StatefulWidget {
   @override
@@ -19,12 +19,47 @@ class _SignUpPageState extends State<SignUpPage> {
   String? gender;
   String errorMessage = '';
 
+  // Password validation method
+  bool isPasswordValid(String password) {
+    final passwordPattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#\$&*~]).{8,}$';
+    final regExp = RegExp(passwordPattern);
+    return regExp.hasMatch(password);
+  }
+
+  Future<bool> isGoogleAccount(String email) async {
+    final GoogleSignIn googleSignIn = GoogleSignIn();
+    try {
+      // Attempt to authenticate silently with Google Sign-In
+      final GoogleSignInAccount? googleUser = await googleSignIn.signInSilently();
+      return googleUser != null && googleUser.email == email;
+    } catch (e) {
+      return false; // Return false if the sign-in fails
+    }
+  }
+
   Future<void> signUp() async {
     String name = nameController.text;
     String email = emailController.text;
     String password = passwordController.text;
     String contact = contactController.text;
     String address = addressController.text;
+
+    // Check if the email is a Google account
+    bool isGoogleEmail = await isGoogleAccount(email);
+    if (!isGoogleEmail) {
+      setState(() {
+        errorMessage = 'Please use a valid Google email address.';
+      });
+      return;
+    }
+
+    // Password validation check
+    if (!isPasswordValid(password)) {
+      setState(() {
+        errorMessage = 'Password must be at least 8 characters long, contain at least 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character.';
+      });
+      return;
+    }
 
     try {
       UserCredential userCredential = await FirebaseAuth.instance
