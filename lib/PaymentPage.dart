@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'AboutUsPage.dart';
+import 'LoginPage.dart';
+import 'OrderHistoryPage.dart';
+import 'ProfilePage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'MenuPage.dart';
 
 class PaymentPage extends StatefulWidget {
-  final String orderId;
-  final String customerId;
-  final List<QueryDocumentSnapshot> cartItems;
+  final String? userId;
+  final String restaurantId;
   final double totalAmount; // Total amount passed from CartPage
 
   const PaymentPage({
     Key? key,
-    required this.orderId,
-    required this.customerId,
-    required this.cartItems,
+    required this.userId,
+    required this.restaurantId,
     required this.totalAmount,
   }) : super(key: key);
 
@@ -24,6 +28,9 @@ class _PaymentPageState extends State<PaymentPage> {
   late Razorpay _razorpay;
   double gst = 0.0;
   double finalAmount = 0.0;
+  List<Map<String, dynamic>> cartItems = [];
+  bool isLoading = true;
+  String diningOption = 'Dine In'; // Default option for dining type
 
   @override
   void initState() {
@@ -38,6 +45,9 @@ class _PaymentPageState extends State<PaymentPage> {
     // Calculate GST and final amount
     gst = widget.totalAmount * 0.18; // Assuming 18% GST
     finalAmount = widget.totalAmount + gst;
+
+    // Fetch the user's cart items
+    _fetchCartItems();
   }
 
   @override
@@ -46,14 +56,177 @@ class _PaymentPageState extends State<PaymentPage> {
     super.dispose();
   }
 
+  Future<void> _fetchCartItems() async {
+    try {
+      // Fetch the cart document using the userId
+      DocumentSnapshot userCart = await FirebaseFirestore.instance
+          .collection('cart')
+          .doc(widget.userId)
+          .get();
+
+      if (userCart.exists) {
+        // Get the restaurant's subcollection based on restaurantId
+        QuerySnapshot restaurantCart = await FirebaseFirestore.instance
+            .collection('cart')
+            .doc(widget.userId)
+            .collection(widget.restaurantId)
+            .get();
+
+        // Extract each item from the restaurant's subcollection and add it to cartItems list
+        setState(() {
+          cartItems = restaurantCart.docs.map((doc) {
+            return doc.data() as Map<String, dynamic>;
+          }).toList();
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+        _showMessage('Error', 'No cart found for this user.');
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      _showMessage('Error', 'Failed to load cart items.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFFEAFCFA),
       appBar: AppBar(
-        title: const Text('Payment'),
-        backgroundColor: Colors.teal[900],
+          automaticallyImplyLeading: false,
+          backgroundColor: const Color(0xFF1B3C3D),
+          leading: PopupMenuButton<String>(
+            icon: const Icon(Icons.settings, color: Colors.white),
+            color: const Color(0xFFEAFCFA),
+            itemBuilder: (BuildContext context) {
+              return [
+                PopupMenuItem<String>(
+                  value: 'profile',
+                  child: Row(
+                    children: const [
+                      Icon(Icons.person, color: Colors.black),
+                      SizedBox(width: 8),
+                      Text('Profile', style: TextStyle(color: Colors.black)),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'order_history',
+                  child: Row(
+                    children: const [
+                      Icon(Icons.history, color: Colors.black),
+                      SizedBox(width: 8),
+                      Text('Order History', style: TextStyle(color: Colors.black)),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'about_us',
+                  child: Row(
+                    children: const [
+                      Icon(Icons.info, color: Colors.black),
+                      SizedBox(width: 8),
+                      Text('About Us', style: TextStyle(color: Colors.black)),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'logout',
+                  child: Row(
+                    children: const [
+                      Icon(Icons.logout, color: Colors.black),
+                      SizedBox(width: 8),
+                      Text('Logout', style: TextStyle(color: Colors.black)),
+                    ],
+                  ),
+                ),
+              ];
+            },
+            onSelected: (String value) async {
+              String email = FirebaseAuth.instance.currentUser?.email ?? '';
+
+              if (value == 'profile') {
+                if (email.isNotEmpty) {
+                  QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+                      .collection('users')
+                      .where('email', isEqualTo: email)
+                      .get();
+
+                  if (userSnapshot.docs.isNotEmpty) {
+                    String documentId = userSnapshot.docs.first.id;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProfilePage(documentId: documentId),
+                      ),
+                    );
+                  } else {
+                    print('User document not found.');
+                  }
+                } else {
+                  print('No user is currently logged in.');
+                }
+              } else if (value == 'order_history') {
+                if (email.isNotEmpty) {
+                  QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+                      .collection('users')
+                      .where('email', isEqualTo: email)
+                      .get();
+
+                  if (userSnapshot.docs.isNotEmpty) {
+                    String documentId = userSnapshot.docs.first.id;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OrderHistoryPage(documentId: documentId),
+                      ),
+                    );
+                  } else {
+                    print('User document not found.');
+                  }
+                }
+              } else if (value == 'logout') {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                      (route) => false,
+                );
+              } else if (value == 'about_us') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AboutUsPage(),
+                  ),
+                );
+              }
+            },
+          ),
+          title: Center(
+            child: Image.asset(
+              'assets/images/MenuVistaicon.png',
+              height: 50,
+              width: 200,
+            ),
+          ),
+          actions: [
+            IconButton(
+              icon: Image.asset(
+                'assets/images/topmenuicon.png',
+                height: 50,
+                width: 50,
+              ),
+              onPressed: () {},
+            ),
+          ],
       ),
-      body: Padding(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,13 +238,38 @@ class _PaymentPageState extends State<PaymentPage> {
             const SizedBox(height: 10),
             Expanded(
               child: ListView.builder(
-                itemCount: widget.cartItems.length,
+                itemCount: cartItems.length,
                 itemBuilder: (context, index) {
-                  var cartItem = widget.cartItems[index].data() as Map<String, dynamic>;
-                  return ListTile(
-                    title: Text(cartItem['itemname']),
-                    subtitle: Text('Quantity: ${cartItem['quantity']}'),
-                    trailing: Text('Rs ${cartItem['price']}'),
+                  var cartItem = cartItems[index];
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1B3C3D),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    margin: const EdgeInsets.symmetric(vertical: 5),
+                    padding: const EdgeInsets.all(10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              cartItem['itemName'] ?? 'Unknown Item',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            Text(
+                              'Quantity: ${cartItem['quantity'] ?? 0}',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          'Rs ${cartItem['price']?.toString() ?? '0.00'}',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),
@@ -81,6 +279,77 @@ class _PaymentPageState extends State<PaymentPage> {
             _paymentMethods(),
           ],
         ),
+      ),
+        bottomNavigationBar: Container(
+          color: Color(0xFF1B3C3D),
+          height: 50,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              // Back Button with Navigator.push and MaterialPageRoute
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Color(0xFF1B3C3D),
+                    borderRadius: BorderRadius.circular(2),
+                    border: Border.all(
+                      color: Colors.black12, // Border color
+                      width: 1,          // Border width
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black45,
+                        offset: Offset(5, 5),
+                        blurRadius: 1.0,
+                      ),
+                    ],
+                  ),
+                  padding: EdgeInsets.all(5.0),
+                  child: IconButton(
+                    iconSize: 20.0,
+                    icon: Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () {
+                      Navigator.pop(context); // Go back to the previous page
+                    },
+                  ),
+                ),
+              ),
+
+              // Shopping Cart Button with Navigator.push and MaterialPageRoute
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Color(0xFF1B3C3D),
+                    borderRadius: BorderRadius.circular(2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black45,
+                        offset: Offset(1, 1),
+                        blurRadius: 1.0,
+                      ),
+                    ],
+                  ),
+                  padding: EdgeInsets.all(10.0),
+                  child: IconButton(
+                    iconSize: 30.0,
+                    icon: Image.asset('assets/images/bottommenuicon.png'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => MenuPage(// Pass the documentId as userId
+                          Rid: widget.restaurantId,
+                        )), // Replace with the correct page
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _selectDiningOption(context),
+        child: const Icon(Icons.restaurant_menu),
       ),
     );
   }
@@ -93,6 +362,7 @@ class _PaymentPageState extends State<PaymentPage> {
         _summaryRow('GST (18%)', 'Rs ${gst.toStringAsFixed(2)}'),
         const Divider(color: Colors.black),
         _summaryRow('Total to Pay', 'Rs ${finalAmount.toStringAsFixed(2)}', isBold: true),
+        _summaryRow('Dining Option', diningOption), // Display selected dining option
         const SizedBox(height: 10),
       ],
     );
@@ -164,35 +434,56 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    await FirebaseFirestore.instance.collection('orders').doc(widget.orderId).set({
-      'orderId': widget.orderId,
-      'customerId': widget.customerId,
-      'items': widget.cartItems.map((item) => item.data()).toList(),
+    String orderId = FirebaseFirestore.instance.collection('orders').doc().id; // Generate order ID
+
+    // Create the order in Firestore
+    await FirebaseFirestore.instance.collection('orders').doc(orderId).set({
+      'orderId': orderId,
+      'customerId': widget.userId,
+      'items': cartItems, // Use the fetched cartItems
       'totalAmount': widget.totalAmount,
       'gst': gst,
       'finalAmount': finalAmount,
-      'paymentStatus': 'Success',
+      'paymentStatus': 'Successful',
+      'orderstatus': 'Pending',
       'paymentId': response.paymentId,
+      'orderType': diningOption, // Store the dining option
       'timestamp': Timestamp.now(),
     });
 
+    // Delete the cart subcollection
+    await FirebaseFirestore.instance
+        .collection('cart')
+        .doc(widget.userId)
+        .collection(widget.restaurantId)
+        .get()
+        .then((snapshot) {
+      for (DocumentSnapshot ds in snapshot.docs) {
+        ds.reference.delete();
+      }
+    });
+
+    // Redirect to the RestaurantListPage
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+            builder: (context) => OrderHistoryPage(documentId: widget.userId)),
+            (Route<dynamic> route) => false,
+      );
     _showMessage('Payment Successful', 'Payment ID: ${response.paymentId}');
   }
 
-  void _handlePaymentError(PaymentFailureResponse response) async {
-    await FirebaseFirestore.instance.collection('orders').doc(widget.orderId).set({
-      'orderId': widget.orderId,
-      'customerId': widget.customerId,
-      'items': widget.cartItems.map((item) => item.data()).toList(),
-      'totalAmount': widget.totalAmount,
-      'gst': gst,
-      'finalAmount': finalAmount,
-      'paymentStatus': 'Failed',
-      'paymentId': null,
-      'timestamp': Timestamp.now(),
-    });
-
+  void _handlePaymentError(PaymentFailureResponse response) {
     _showMessage('Payment Failed', 'Error: ${response.message}');
+    // Redirect back to the PaymentPage in case of failure
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => PaymentPage(
+        userId: widget.userId,
+        restaurantId: widget.restaurantId,
+        totalAmount: widget.totalAmount,
+      )),
+    );
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
@@ -203,17 +494,103 @@ class _PaymentPageState extends State<PaymentPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(content),
+        backgroundColor: const Color(0xFF1B3C3D), // Set the background color
+        title: Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white, // Title text color set to white
+          ),
+        ),
+        content: Text(
+          content,
+          style: const TextStyle(
+            color: Colors.white, // Content text color set to white
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.popUntil(context, ModalRoute.withName('/home'));
+              Navigator.of(context).pop();
             },
-            child: const Text('OK'),
+            child: const Text(
+              'OK',
+              style: TextStyle(
+                color: Color(0xFFFFDE59), // Set the OK button color
+                fontWeight: FontWeight.bold, // Optional: Make the text bold
+              ),
+            ),
           ),
         ],
       ),
     );
+  }
+
+
+  Future<void> _selectDiningOption(BuildContext context) async {
+    final selectedOption = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1B3C3D),
+          title: const Text(
+            'Select Dining Option',
+            style: TextStyle(
+              fontFamily: 'Oswald',
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              fontSize: 16,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.white), // White border
+                  borderRadius: BorderRadius.circular(10), // Rounded corners (optional)
+                ),
+                child: ListTile(
+                  title: const Text(
+                    'Dine In',
+                    style: TextStyle(
+                      fontFamily: 'Oswald',
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                  onTap: () => Navigator.pop(context, 'Dine In'),
+                ),
+              ),
+              const SizedBox(height: 10), // Add spacing between the options
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.white), // White border
+                  borderRadius: BorderRadius.circular(10), // Rounded corners (optional)
+                ),
+                child: ListTile(
+                  title: const Text(
+                    'Take Away',
+                    style: TextStyle(
+                      fontFamily: 'Oswald',
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                  onTap: () => Navigator.pop(context, 'Take Away'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selectedOption != null) {
+      setState(() {
+        diningOption = selectedOption;
+      });
+    }
   }
 }

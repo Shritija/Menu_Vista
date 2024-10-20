@@ -12,6 +12,8 @@ import 'ProfilePage.dart';
 import 'RestaurantSignUpPage.dart';
 import 'ReviewPage.dart';
 import 'SignUpPage.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

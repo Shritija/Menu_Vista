@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
-import 'main.dart';
 import 'RestaurantListPage.dart';
 import 'orderlistpage.dart';
 
@@ -16,7 +15,6 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   bool rememberMe = false;
   String errorMessage = '';
-  String rid = 'PR5Gs3rUuEvPK6HvCZcl';
   Timer? _timer;
   bool isRestaurantLogin = false; // Toggle for restaurant/user login
 
@@ -214,7 +212,6 @@ class _LoginPageState extends State<LoginPage> {
                         String email = emailController.text.trim();
                         String password = passwordController.text.trim();
                         String collection = isRestaurantLogin ? 'restaurant' : 'users';
-
                         try {
                           // Authenticate using FirebaseAuth
                           UserCredential userCredential = await FirebaseAuth.instance
@@ -227,17 +224,32 @@ class _LoginPageState extends State<LoginPage> {
                               errorMessage = '';
                             });
 
-                            // Check if it's a restaurant login or user login
+                            String Rid = ''; // To store the restaurant document ID
+
                             if (isRestaurantLogin) {
-                              // Redirect to "Under Construction" page
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => OrderListPage(restaurantId: rid),
-                                ),
-                              );
+                              // Query Firestore to match the email in the 'restaurant' collection
+                              var querySnapshot = await FirebaseFirestore.instance
+                                  .collection('restaurant')
+                                  .where('email', isEqualTo: email)
+                                  .limit(1)
+                                  .get();
+
+                              if (querySnapshot.docs.isNotEmpty) {
+                                // Fetch the documentId of the matched restaurant
+                                Rid = querySnapshot.docs[0].id;
+
+                                // Redirect to "Under Construction" page
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => OrderListPage(restaurantId: Rid,),
+                                  ),
+                                );
+                              } else {
+                                showError('Restaurant with this email not found.');
+                              }
                             } else {
-                              // Redirect to Restaurant List Page
+                              // Redirect to Restaurant List Page for user login
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -248,7 +260,10 @@ class _LoginPageState extends State<LoginPage> {
                           } else {
                             showError('Email not found in the $collection collection.');
                           }
-                        } on FirebaseAuthException catch (e) {
+                        } catch (e) {
+                          showError('Error: $e');
+                        }
+              on FirebaseAuthException catch (e) {
                           if (e.code == 'user-not-found') {
                             showError('No user found for that email.');
                           } else if (e.code == 'wrong-password') {

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 class OrderHistoryPage extends StatelessWidget {
-  final String documentId;
+  final String? documentId;
 
   OrderHistoryPage({required this.documentId});
 
@@ -12,7 +13,7 @@ class OrderHistoryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xFF1B3C3D),
+        backgroundColor: const Color(0xFF1B3C3D),
         title: Center(
           child: Image.asset(
             'assets/images/MenuVistaicon.png',
@@ -23,16 +24,15 @@ class OrderHistoryPage extends StatelessWidget {
         automaticallyImplyLeading: false,
       ),
       body: Container(
-        color: Color(0xFFEAFCFA),
+        color: const Color(0xFFEAFCFA),
         child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('orders')
               .where('customerId', isEqualTo: documentId)
-              .where('orderstatus', isEqualTo: 'Done') // Fetch only completed orders
               .snapshots(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
-              return Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator());
             }
 
             final orders = snapshot.data!.docs;
@@ -41,17 +41,64 @@ class OrderHistoryPage extends StatelessWidget {
               itemCount: orders.length,
               itemBuilder: (context, index) {
                 var order = orders[index];
+
+                // Extracting order details
+                var orderId = order['orderId'] ?? 'Unknown';
+                var orderType = order['orderType'] ?? 'Unknown';
+                var orderStatus = order['orderstatus'] ?? 'Unknown';
+                var finalAmount = order['finalAmount'] ?? 0;
+                var gst = order['gst'] ?? 0;
+                var totalAmount = order['totalAmount'] ?? 0;
+                var paymentStatus = order['paymentStatus'] ?? 'Unknown';
+                var paymentId = order['paymentId'] ?? 'Unknown';
+                var timestamp = order['timestamp'] != null
+                    ? DateFormat('dd MMMM yyyy, hh:mm a').format(order['timestamp'].toDate())
+                    : 'Unknown';
+
+                // Handling items array
+                var items = order['items'] ?? [];
+                List<Widget> itemWidgets = [];
+
+                for (var item in items) {
+                  var itemName = item['itemName'] ?? 'Unknown Item';
+                  var quantity = item['quantity'] ?? 0;
+                  var price = item['price'] ?? 0;
+                  var selectedSize = item['selectedSize'] ?? 'Unknown Size';
+                  var itemInstructions = item['extraInstructions'] ?? 'None';
+
+                  itemWidgets.add(
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        '$itemName ($selectedSize) - Quantity: $quantity, Price: Rs $price\nInstructions: $itemInstructions',
+                        style: const TextStyle(
+                          fontFamily: 'Oswald',
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                Color statusColor;
+                if (orderStatus.toLowerCase() == 'done') {
+                  statusColor = Colors.lightGreenAccent;
+                } else if (orderStatus.toLowerCase() == 'pending') {
+                  statusColor = Colors.redAccent;
+                } else {
+                  statusColor = Colors.grey; // Default for other statuses
+                }
                 return Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Card(
-                    color: Color(0xFF1B3C3D),
+                    color: const Color(0xFF1B3C3D),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: ListTile(
                       title: Text(
-                        'Order Number: ${order['orderId']}',
-                        style: TextStyle(
+                        'Order Number: $orderId',
+                        style: const TextStyle(
                           fontFamily: 'Oswald',
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -61,9 +108,12 @@ class OrderHistoryPage extends StatelessWidget {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          const SizedBox(height: 8),
+                          ...itemWidgets, // Display all the items
+                          const SizedBox(height: 8),
                           Text(
-                            'Items: ${order['items']}',
-                            style: TextStyle(
+                            'Order Type: $orderType',
+                            style: const TextStyle(
                               fontFamily: 'Oswald',
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -71,8 +121,8 @@ class OrderHistoryPage extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Order Type: ${order['orderType']}',
-                            style: TextStyle(
+                            'Order Date: $timestamp',
+                            style: const TextStyle(
                               fontFamily: 'Oswald',
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -80,8 +130,8 @@ class OrderHistoryPage extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Extra Instructions: ${order['extrainstructions'] ?? "None"}',
-                            style: TextStyle(
+                            'Total Amount: Rs $totalAmount (Including GST: Rs $gst)',
+                            style: const TextStyle(
                               fontFamily: 'Oswald',
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -89,21 +139,28 @@ class OrderHistoryPage extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Order Date: ${DateFormat('dd MMMM yyyy').format(order['time'].toDate())}', // Example format
-                            style: TextStyle(
+                            'Final Amount: Rs $finalAmount',
+                            style: const TextStyle(
                               fontFamily: 'Oswald',
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
                           ),
-                          Text(
-                            'Status: ${order['orderstatus']}',
-                            style: TextStyle(
-                              fontFamily: 'Oswald',
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              'Order Status: $orderStatus',
+                              style: const TextStyle(
+                                fontFamily: 'Oswald',
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ],
@@ -117,9 +174,9 @@ class OrderHistoryPage extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: BottomAppBar(
-        color: Color(0xFF1B3C3D),
+        color: const Color(0xFF1B3C3D),
         child: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -128,5 +185,3 @@ class OrderHistoryPage extends StatelessWidget {
     );
   }
 }
-
-

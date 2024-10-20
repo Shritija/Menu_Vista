@@ -188,7 +188,6 @@ class _MenuPageState extends State<MenuPage> {
             final mealCollectionSnapshot = await mealTypesRef.collection(mealType)
                 .where('itemname', isGreaterThanOrEqualTo: query)
                 .where('itemname', isLessThanOrEqualTo: query + '\uf8ff')  // Perform search
-                .where('isveg', isEqualTo: isVeg)  // Filter based on veg/non-veg toggle
                 .get();
 
             if (mealCollectionSnapshot.docs.isNotEmpty) {

@@ -438,7 +438,7 @@ class _ItemPageState extends State<ItemPage> {
                                           borderSide: BorderSide(color: Colors.black, width: 2), // Focused border color
                                         ),
                                       ),
-                                      style: TextStyle(color: Colors.black), // Input text color
+                                      style: TextStyle(color: Colors.white), // Input text color
                                     ),
                                     actions: [
                                       TextButton(
