@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:async';
-import 'OrderHistoryPage.dart';
-import 'LoginPage.dart';
-import 'RestaurantListPage.dart';
-import 'ProfilePage.dart';
-import 'AboutUsPage.dart';
-import 'ItemPage.dart';
-import 'CartPage.dart';
+import 'dart:async'; // For managing timer for error message removal
+import 'underconstructionpage.dart';
+import 'profpic.dart';
+import 'lgsk.dart';
+import 'rlsk.dart';
+import 'ipsk.dart';
 
 class MenuPage extends StatefulWidget {
   final String Rid;
@@ -24,8 +22,6 @@ class _MenuPageState extends State<MenuPage> {
   String vegStatus = 'Veg';
   String selectedMealType = '';
   String searchQuery = '';
-  String documentId='';
-  String email = FirebaseAuth.instance.currentUser?.email ?? '';
   Map<String, bool> mealSelections = {
     'Breakfast': false,
     'Lunch': false,
@@ -35,67 +31,11 @@ class _MenuPageState extends State<MenuPage> {
   Map<String, List<Map<String, dynamic>>> menuData = {};
   Map<String, String> selectedSizes = {};  // Track selected size per item
   Map<String, num> selectedPrices = {};    // Track selected price per item
-  Future<void> fetchDocumentId() async {
-    try {
-      QuerySnapshot userSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: email)
-          .get();
-
-      if (userSnapshot.docs.isNotEmpty) {
-        setState(() {
-          documentId = userSnapshot.docs.first.id;
-        });
-      }
-    } catch (error) {
-      print('Error fetching documentId: $error');
-    }
-  }
-  Future<void> checkAndCreateCartIfNotExists() async {
-    // Get the current user's email
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null || user.email == null) {
-      print('No user is logged in.');
-      return;
-    }
-
-    String userEmail = user.email!;
-
-    // Get the user's document ID from the 'users' collection using the email field
-    QuerySnapshot userSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where('email', isEqualTo: userEmail)
-        .limit(1)
-        .get();
-
-    if (userSnapshot.docs.isEmpty) {
-      print('User with email $userEmail not found in the users collection.');
-      return;
-    }
-
-    String userDocId = userSnapshot.docs.first.id;
-    DocumentSnapshot cartDoc = await FirebaseFirestore.instance
-        .collection('cart')
-        .doc(userDocId)
-        .get();
-
-    if (!cartDoc.exists) {
-      await FirebaseFirestore.instance.collection('cart').doc(userDocId).set({
-      });
-      print('Cart created for user with document ID: $userDocId');
-    } else {
-      print('Cart already exists for user with document ID: $userDocId');
-    }
-  }
 
   @override
   void initState() {
     super.initState();
     fetchMenuData();
-    checkAndCreateCartIfNotExists();
-    if (email.isNotEmpty) {
-      fetchDocumentId(); // Call to fetch documentId on widget initialization
-    }
   }
 
   Future<void> fetchMenuData() async {
@@ -188,7 +128,6 @@ class _MenuPageState extends State<MenuPage> {
             final mealCollectionSnapshot = await mealTypesRef.collection(mealType)
                 .where('itemname', isGreaterThanOrEqualTo: query)
                 .where('itemname', isLessThanOrEqualTo: query + '\uf8ff')  // Perform search
-                .where('isveg', isEqualTo: isVeg)  // Filter based on veg/non-veg toggle
                 .get();
 
             if (mealCollectionSnapshot.docs.isNotEmpty) {
@@ -231,245 +170,204 @@ class _MenuPageState extends State<MenuPage> {
   }
 
 
-
   String capitalize(String s) => s[0].toUpperCase() + s.substring(1);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Color(0xFFEAFCFA),
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          backgroundColor: Color(0xFF1B3C3D),
-          leading: PopupMenuButton<String>(
-            icon: Icon(Icons.settings, color: Colors.white),
-            color: Color(0xFFEAFCFA),
-            itemBuilder: (BuildContext context) {
-              return [
-                PopupMenuItem<String>(
-                  value: 'profile',
-                  child: Row(
-                    children: [
-                      Icon(Icons.person, color: Colors.black),
-                      SizedBox(width: 8),
-                      Text(
-                        'Profile',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ],
-                  ),
-                ),
-                PopupMenuItem<String>(
-                  value: 'order_history',
-                  child: Row(
-                    children: [
-                      Icon(Icons.history, color: Colors.black),
-                      SizedBox(width: 8),
-                      Text(
-                        'Order History',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ],
-                  ),
-                ),
-                PopupMenuItem<String>(
-                  value: 'about_us',
-                  child: Row(
-                    children: [
-                      Icon(Icons.info, color: Colors.black),
-                      SizedBox(width: 8),
-                      Text(
-                        'About Us',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ],
-                  ),
-                ),
-                PopupMenuItem<String>(
-                  value: 'logout',
-                  child: Row(
-                    children: [
-                      Icon(Icons.logout, color: Colors.black),
-                      SizedBox(width: 8),
-                      Text(
-                        'Logout',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ],
-                  ),
-                ),
-              ];
-            },
-            onSelected: (String value) async {
-              String email = FirebaseAuth.instance.currentUser?.email ?? '';
-
-              if (value == 'profile') {
-                if (email.isNotEmpty) {
-                  QuerySnapshot userSnapshot = await FirebaseFirestore.instance
-                      .collection('users')
-                      .where('email', isEqualTo: email)
-                      .get();
-
-                  if (userSnapshot.docs.isNotEmpty) {
-                    String documentId = userSnapshot.docs.first.id;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ProfilePage(documentId: documentId),
-                      ),
-                    );
-                  } else {
-                    print('User document not found.');
-                  }
-                } else {
-                  print('No user is currently logged in.');
-                }
-              } else if (value == 'order_history') {
-                if (email.isNotEmpty) {
-                  QuerySnapshot userSnapshot = await FirebaseFirestore.instance
-                      .collection('users')
-                      .where('email', isEqualTo: email)
-                      .get();
-
-                  if (userSnapshot.docs.isNotEmpty) {
-                    String documentId = userSnapshot.docs.first.id;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => OrderHistoryPage(documentId: documentId),
-                      ),
-                    );
-                  } else {
-                    print('User document not found.');
-                  }
-                }
-              } else if (value == 'logout') {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginPage()),
-                      (route) => false,
-                );
-              } else if (value == 'about_us') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AboutUsPage(),
-                  ),
-                );
-              }
-            },
-          ),
-          title: Center(
-            child: Image.asset(
-              'assets/images/MenuVistaicon.png',
-              height: 50,
-              width: 200,
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon: Image.asset(
-                'assets/images/topmenuicon.png',
-                height: 50,
-                width: 50,
-              ),
-              onPressed: () {
-                // Does nothing for now
-              },
-            ),
-          ],
-        ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                // Search bar
-                TextField(
-                  onChanged: (value) {
-                    performSearch(value);  // Call the search method
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Search burger, beverage etc...',
-                    prefixIcon: Icon(Icons.search),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: BorderSide(
-                        color: Colors.black,
-                        width: 1.0,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: BorderSide(
-                        color: Colors.black, // Set the focused border color to black
-                        width: 2.0,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 10),
-
-                // Meal category buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: mealSelections.entries
-                      .where((entry) => entry.value)
-                      .map((entry) => Row(
-                    children: [
-                      _buildMealButton(entry.key),
-                      SizedBox(width: 1), // Add spacing between buttons
-                    ],
-                  )
-                  ).toList(),
-                ),
-
-                SizedBox(height: 10),
-
-                // Veg/Non-Veg Toggle
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start, // Aligns everything to the left
+      backgroundColor: Color(0xFFEAFCFA),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: Color(0xFF1B3C3D),
+        leading: PopupMenuButton<String>(
+          icon: Icon(Icons.settings, color: Colors.white),
+          color: Color(0xFFEAFCFA), // Background color for the dropdown
+          itemBuilder: (BuildContext context) {
+            return [
+              PopupMenuItem<String>(
+                value: 'profile',
+                child: Row(
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Veg/Non-Veg',
-                          style: TextStyle(
-                            fontFamily: 'Oswald',
-                            fontSize: 12,
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 8), // Add some space between the text and the switch
-                        Switch(
-                          value: isVeg,
-                          onChanged: (value) {
-                            setState(() {
-                              isVeg = value;
-                              vegStatus = isVeg ? 'Veg' : 'Non-Veg';
-                              fetchMenuData();// Fetch data again based on new selection
-                            });
-                          },
-                          activeColor: Colors.green,
-                          inactiveThumbColor: Colors.red[300],
-                          inactiveTrackColor: Colors.red,
-                        ),
-                      ],
+                    Icon(Icons.person, color: Colors.black),
+                    SizedBox(width: 8),
+                    Text(
+                      'Profile',
+                      style: TextStyle(color: Colors.black),
                     ),
                   ],
                 ),
-                SizedBox(height: 10),
+              ),
+              PopupMenuItem<String>(
+                value: 'about_us',
+                child: Row(
+                  children: [
+                    Icon(Icons.info, color: Colors.black),
+                    SizedBox(width: 8),
+                    Text(
+                      'About Us',
+                      style: TextStyle(color: Colors.black),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, color: Colors.black),
+                    SizedBox(width: 8),
+                    Text(
+                      'Logout',
+                      style: TextStyle(color: Colors.black),
+                    ),
+                  ],
+                ),
+              ),
+            ];
+          },
+          onSelected: (String value) async {
+            if (value == 'profile') {
+              // Fetch user details from Firestore using the email from the authenticated user
+              String email = FirebaseAuth.instance.currentUser?.email ?? ''; // Get the current user's email
+              print('Current logged-in user email: $email');
 
-                // Display selected meal type items
-                ..._buildMealItems(selectedMealType),
-              ],
-            ),
+              if (email.isNotEmpty) {
+                // Search for the user document in the 'users' collection
+                QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+                    .collection('users')
+                    .where('email', isEqualTo: email)
+                    .get();
+
+                if (userSnapshot.docs.isNotEmpty) {
+                  //DocumentSnapshot userDocument = userSnapshot.docs.first;
+
+                  // Get the document ID
+                  //String documentId = userDocument.id;
+
+                  // Navigate to ProfilePage and pass the document ID
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      //builder: (context) => ProfilePage(documentId: documentId),
+                      builder: (context) => ProfilePage(),
+                    ),
+                  );
+                } else {
+                  // Handle the case where the user document does not exist
+                  print('User document not found.');
+                }
+              } else {
+                print('No user is currently logged in.');
+              }
+            } else if (value == 'logout') {
+              // Navigate back to the LoginPage
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => LoginPage()),
+                    (route) => false,
+              );
+            } else if (value == 'about_us') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => UnderConstructionPage(),
+                ),
+              );
+            }
+          },
+        ),
+        title: Center(
+          child: Image.asset(
+            'assets/images/MenuVistaicon.png',
+            height: 50,
+            width: 200,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Image.asset(
+              'assets/images/topmenuicon.png',
+              height: 50,
+              width: 50,
+            ),
+            onPressed: () {
+              // Does nothing for now
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              // Search bar
+              TextField(
+                onChanged: (value) {
+                  performSearch(value);  // Call the search method
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search burger, beverage etc...',
+                  prefixIcon: Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                    borderSide: BorderSide(
+                      color: Colors.black,
+                      width: 1.0,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 10),
+
+              // Meal category buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: mealSelections.entries
+                    .where((entry) => entry.value)
+                    .map((entry) => _buildMealButton(entry.key))
+                    .toList(),
+              ),
+              SizedBox(height: 10),
+
+              // Veg/Non-Veg Toggle
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Veg/Non-Veg',
+                    style: TextStyle(
+                      fontFamily: 'Oswald',
+                      fontSize: 12,
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Switch(
+                    value: isVeg,
+                    onChanged: (value) {
+                      setState(() {
+                        isVeg = value;
+                        vegStatus = isVeg ? 'Veg' : 'Non-Veg';
+                        fetchMenuData(); // Fetch data again based on new selection
+                      });
+                    },
+                    activeColor: Colors.green,
+                    inactiveThumbColor: Colors.red[300],
+                    inactiveTrackColor: Colors.red,
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+
+              // Display selected meal type items
+              ..._buildMealItems(selectedMealType),
+            ],
+          ),
+        ),
+      ),
         bottomNavigationBar: Container(
           color: Color(0xFF1B3C3D),
           height: 50,
@@ -523,23 +421,16 @@ class _MenuPageState extends State<MenuPage> {
                     ],
                   ),
                   padding: EdgeInsets.all(10.0),
-                  child: IconButton(
-                    iconSize: 30.0,
-                    icon: Image.asset('assets/images/shoppingcarticon.png'),
-                  onPressed: () {
+                  //child: IconButton(
+                  //  iconSize: 30.0,
+                  //  icon: Image.asset('assets/images/shoppingcarticon.png'),
+                    /*onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => CartPage(
-                          userId: documentId,           // Pass the documentId as userId
-                          restaurantId: widget.Rid,
-                          itemId: null,      // Include other required parameters as needed
-                          selectedSize: null,
-                          price: 0,
-                          extraInstructions: null,
-                        )), // Replace with the correct page
+                        MaterialPageRoute(builder: (context) => CartPage()), // Replace with the correct page
                       );
-                    },
-                   ),
+                    },*/
+                 // ),
                 ),
               ),
             ],
@@ -603,11 +494,6 @@ class _MenuPageState extends State<MenuPage> {
     required num? largePrice,
     required String documentId,
   }) {
-    // Truncate the description if it's too long
-    String truncatedDescription = description.length > 50
-        ? description.substring(0, 50) + '...'
-        : description;
-
     return GestureDetector(
       onTap: () {
         // Navigate to the ItemPage and pass Rid and documentId
@@ -644,6 +530,7 @@ class _MenuPageState extends State<MenuPage> {
                       imageUrl, // Use the imageUrl passed from the menu item
                       fit: BoxFit.cover,
                     ),
+
                   ),
                 ),
                 SizedBox(width: 5),
@@ -651,18 +538,8 @@ class _MenuPageState extends State<MenuPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        name,
-                        style: TextStyle(
-                          fontFamily: 'Oswald',
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        truncatedDescription, // Display truncated description
-                        style: TextStyle(fontSize: 12),
-                      ),
+                      Text(name, style: TextStyle(fontFamily: 'Oswald', fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text(description, style: TextStyle(fontSize: 12)),
                       SizedBox(height: 10),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -704,7 +581,6 @@ class _MenuPageState extends State<MenuPage> {
       ),
     );
   }
-
 
   Widget _buildSizeButton(String label, num price, String documentId) {
     bool isSelected = selectedSizes[documentId] == label; // Check if this size is selected for this item

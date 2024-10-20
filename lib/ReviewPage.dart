@@ -573,10 +573,10 @@ class _ReviewPageState extends State<ReviewPage> {
                         MaterialPageRoute(builder: (context) => CartPage(
                           userId: documentId,           // Pass the documentId as userId
                           restaurantId: widget.restaurantId,
-                          itemId: ' ',      // Include other required parameters as needed
-                          selectedSize: ' ',
+                          itemId: null,      // Include other required parameters as needed
+                          selectedSize: null,
                           price: 0,
-                          extraInstructions: ' ',
+                          extraInstructions: null,
                         )), // Replace with the correct page
                       );
                     },

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:async';
-import 'main.dart';
-import 'RestaurantListPage.dart';
+import 'dart:async'; // For managing timer for error message removal
 import 'orderlistpage.dart';
+import 'rlsk.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -210,56 +209,71 @@ class _LoginPageState extends State<LoginPage> {
                     SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: () async {
-                        String email = emailController.text.trim();
-                        String password = passwordController.text.trim();
-                        String collection = isRestaurantLogin ? 'restaurant' : 'users';
+                          String email = emailController.text.trim();
+                          String password = passwordController.text.trim();
+                          String collection = isRestaurantLogin ? 'restaurant' : 'users';
+                          try {
+                            // Authenticate using FirebaseAuth
+                            UserCredential userCredential = await FirebaseAuth.instance
+                                .signInWithEmailAndPassword(email: email, password: password);
+                            bool emailExists = await checkEmailInFirestore(email, collection);
+                            if (emailExists) {
+                              setState(() {
+                                errorMessage = '';
+                              });
+                              // Check if it's a restaurant login
+                              if (isRestaurantLogin) {
+                                // Fetch restaurant documentId from Firestore
+                                var collectionRef = FirebaseFirestore.instance.collection('restaurant');
+                                var querySnapshot = await collectionRef.where('email', isEqualTo: email).get();
 
-                        try {
-                          // Authenticate using FirebaseAuth
-                          UserCredential userCredential = await FirebaseAuth.instance
-                              .signInWithEmailAndPassword(email: email, password: password);
+                                if (querySnapshot.docs.isNotEmpty) {
+                                  String documentId = querySnapshot.docs.first.id;
 
-                          bool emailExists = await checkEmailInFirestore(email, collection);
-
-                          if (emailExists) {
-                            setState(() {
-                              errorMessage = '';
-                            });
-
-                            // Check if it's a restaurant login or user login
-                            if (isRestaurantLogin) {
-                              // Redirect to "Under Construction" page
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => UnderConstructionPage(),
-                                ),
-                              );
-                            } else {
-                              // Redirect to Restaurant List Page
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => RestaurantListPage(),
-                                ),
-                              );
+                                  // Redirect to OrdersPage with the documentId
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => OrderListPage(restaurantId: documentId),
+                                    ),
+                                  );
+                                } 
+                                else {
+                                  showError('Restaurant not found.');
+                                }
+                              } 
+                              else {
+                                // Redirect to Restaurant List Page for user login
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => RestaurantListPage(),
+                                  ),
+                                );
+                              }
+                            } 
+                            else {
+                              showError('Email not found in the $collection collection.');
                             }
-                          } else {
-                            showError('Email not found in the $collection collection.');
+                          } 
+                          on FirebaseAuthException catch (e) 
+                          {
+                            if (e.code == 'user-not-found') {
+                                showError('No user found for that email.');
+                              } 
+                            else if (e.code == 'wrong-password') {
+                                showError('Wrong password provided.');
+                              } 
+                            else {
+                                showError('An unexpected error occurred: ${e.message}');
+                              }
+                          } 
+                          catch (e) 
+                          {
+                            showError('An unexpected error occurred: ${e.toString()}');
                           }
-                        } on FirebaseAuthException catch (e) {
-                          if (e.code == 'user-not-found') {
-                            showError('No user found for that email.');
-                          } else if (e.code == 'wrong-password') {
-                            showError('Wrong password provided.');
-                          } else {
-                            showError('An unexpected error occurred: ${e.message}');
-                          }
-                        } catch (e) {
-                          showError('An unexpected error occurred: ${e.toString()}');
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
+                        },
+                        style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFFFFDE59),
                         padding: EdgeInsets.symmetric(
                             horizontal: 50, vertical: 15),

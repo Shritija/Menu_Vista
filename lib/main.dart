@@ -8,12 +8,10 @@ import 'MenuPage.dart';
 import 'CartPage.dart';
 import 'ForgotPasswordPage.dart';
 import 'ItemPage.dart';
-import 'PaymentPage.dart';
 import 'ProfilePage.dart';
 import 'RestaurantSignUpPage.dart';
 import 'ReviewPage.dart';
 import 'SignUpPage.dart';
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

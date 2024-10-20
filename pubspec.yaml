@@ -42,7 +42,8 @@ dependencies:
   image_picker: ^1.0.0
   firebase_storage: ^12.3.3
   intl: ^0.17.0
-  razorpay_flutter: ^1.3.7
+  upi_pay: ^1.0.1
+  url_launcher: ^6.3.1
 
 
 dev_dependencies:
@@ -55,7 +56,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -79,10 +80,15 @@ flutter:
     - assets/images/bottommenuicon.png
     - assets/images/fries.png
     - assets/images/money.png
+    - assets/images/google_pay.png
+    - assets/gpay_config.json
+    - assets/images/home_white.png
+    - assets/images/edit.png
+
     - assets/images/icon.png
     - assets/images/Empty-cart-1-512.png
     - assets/images/image_processing20200705-25128-1a0u0wj.gif
-    - assets/images/not found.png
+    - assets/images/notfound.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
