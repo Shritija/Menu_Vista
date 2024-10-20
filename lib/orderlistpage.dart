@@ -6,7 +6,6 @@ import 'restaurantProfilePage.dart';
 import 'orderdetails.dart';
 import 'LoginPage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'AboutUsPage.dart';
 
 
@@ -20,61 +19,6 @@ class OrderListPage extends StatefulWidget {
 }
 
 class _OrderListPageState extends State<OrderListPage> {
-
-  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-
-@override
-void initState() {
-  super.initState();
-  _initializeNotifications();
-  _listenForNewOrders();
-}
-
-  Future<void> _initializeNotifications() async {
-    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
-
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-    );
-
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
-  }
-
-  void _listenForNewOrders() {
-    FirebaseFirestore.instance
-        .collection('orders')
-        .where('orderstatus', isEqualTo: 'Pending')
-        .snapshots()
-        .listen((snapshot) {
-      if (snapshot.docs.isNotEmpty) {
-        _showNotification(snapshot.docs.length);
-      }
-    });
-  }
-
-  Future<void> _showNotification(int orderCount) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
-      'order_channel', // channel ID
-      'New Orders', // channel name
-      channelDescription: 'Notification channel for new orders',
-      importance: Importance.high,
-      priority: Priority.high,
-      sound: RawResourceAndroidNotificationSound('order_sound'), // Add your sound file in android/app/src/main/res/raw/order_sound.mp3
-      playSound: true,
-    );
-
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-    );
-
-    await flutterLocalNotificationsPlugin.show(
-      0, // Notification ID
-      'New Order', // Notification title
-      '$orderCount new orders received', // Notification body
-      platformChannelSpecifics,
-      payload: 'order',
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -225,7 +169,6 @@ void initState() {
                     color: Colors.black,
                     fontWeight: FontWeight.bold)));
           }
-          _listenForNewOrders;
           return ListView(
             padding: EdgeInsets.all(8.0),
             children: snapshot.data!.docs.map((order) {
