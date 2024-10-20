@@ -31,22 +31,17 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Firebase dependencies
-  firebase_core: ^3.5.0
-  firebase_auth: ^5.3.0
-  cloud_firestore: ^5.4.2  # For Firestore
-  provider: ^6.0.0         # For state management (if needed)
-  flutter_rating_bar: ^4.0.0  # For rating widgedependencies:
-  upi_pay: ^1.0.1
-  url_launcher: ^6.3.1
-  intl: any
-  firebase_storage: 12.3.3
-  image_picker: ^1.1.2
-
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  firebase_core: ^3.5.0
+  firebase_auth: ^5.3.0
+  cloud_firestore: ^5.4.2
+  provider: ^6.1.2
+  image_picker: ^1.0.0
+  firebase_storage: ^12.3.3
+  intl: ^0.17.0
 
 
 dev_dependencies:
@@ -88,6 +83,10 @@ flutter:
     - assets/images/home_white.png
     - assets/images/edit.png
 
+    - assets/images/icon.png
+    - assets/images/Empty-cart-1-512.png
+    - assets/images/image_processing20200705-25128-1a0u0wj.gif
+    - assets/images/notfound.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -125,6 +124,8 @@ fonts:
          - asset: fonts/Inika-Regular.ttf
          - asset: fonts/Inika-Bold.ttf
            weight: 200
+
+
 
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package

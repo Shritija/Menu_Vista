@@ -13,6 +13,17 @@ import 'fpsk.dart';
 import 'supsk.dart';
 import 'rlsk.dart';
 import 'lgsk.dart';
+import 'LoginPage.dart';
+import 'RestaurantListPage.dart';
+import 'MenuPage.dart';
+import 'CartPage.dart';
+import 'ForgotPasswordPage.dart';
+import 'ItemPage.dart';
+import 'PaymentPage.dart';
+import 'ProfilePage.dart';
+import 'RestaurantSignUpPage.dart';
+import 'ReviewPage.dart';
+import 'SignUpPage.dart';
 
 
 void main() async {
@@ -42,18 +53,59 @@ class MenuVistaApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: LoginPage(),
-      routes: {
-        '/forgot_password': (context) => ForgotPasswordPage(),
-        '/signup': (context) => SignUpPage(),
-        '/restaurant_list': (context) => RestaurantListPage(),
-        '/menu': (context) => MenuPage( Rid: ModalRoute.of(context)!.settings.arguments as String),
-        '/profile': (context) => ProfilePage(),
-        '/cart': (context) => ShoppingCartPage(),
-        '/orderlist': (context) => OrderListPage(restaurantId: ModalRoute.of(context)!.settings.arguments as String),
-        '/editmenu': (context) => MenuEditPage(Rid: "PR5Gs3rUuEvPK6HvCZcl",),
+      // Use onGenerateRoute for dynamic routing
+      onGenerateRoute: (settings) {
+          case '/forgot_password':
+            return MaterialPageRoute(builder: (context) => ForgotPasswordPage());
+          case '/signup':
+            return MaterialPageRoute(builder: (context) => SignUpPage());
+          case '/restaurant_list':
+            return MaterialPageRoute(builder: (context) => RestaurantListPage());
+          case '/menu':
+            final Rid = settings.arguments as String; // Retrieve the Rid argument
+            return MaterialPageRoute(
+              builder: (context) => MenuPage(Rid: Rid), // Pass Rid to MenuPage
+            );
+          case '/profile':
+            final documentId = settings.arguments as String;
+            return MaterialPageRoute(
+                builder: (context) => ProfilePage(documentId: documentId),
+            );
+          case '/cart':
+            final args = settings.arguments as Map<String, String>; // Expect a Map for cart
+            return MaterialPageRoute(
+              builder: (context) => CartPage(
+                   restaurantId: args['restaurantId']!, // Get restaurantId
+                   itemId: args['itemId']!,
+                  userId: args['userId']!,
+                  extraInstructions: args['extraInstructions']!,
+                  selectedSize: args['selectedSize']!,
+                  price: args['price'] as int,
+        ),
+            );
+          case '/item':
+            final itemArgs = settings.arguments as Map<String, String>; // Expect a Map for item
+            return MaterialPageRoute(
+              builder: (context) => ItemPage(
+                restaurantId: itemArgs['restaurantId']!, // Get restaurantId
+                itemId: itemArgs['itemId']!, // Get itemId
+              ),
+            );
+          case '/review':
+            final reviewArgs = settings.arguments as Map<String, String>; // Expect a Map for review
+            return MaterialPageRoute(
+              builder: (context) => ReviewPage(
+                restaurantId: reviewArgs['restaurantId']!, // Get restaurantId
+                itemId: reviewArgs['itemId']!, // Get itemId
+              ),
+            );
+          case '/restaurantsignup':
+            return MaterialPageRoute(builder: (context) => RestaurantSignUpPage());
+          default:
+            return null; // Return null for unknown routes
+        }
       },
     );
-  }
 }
 
 // class LoginPage extends StatefulWidget {
@@ -2664,6 +2716,7 @@ class _CartPageState extends State<CartPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+<<<<<<< HEAD
         backgroundColor: Colors.teal[900],
         title: Text('Foodico', style: TextStyle(fontSize: 24)),
         centerTitle: true,
@@ -2800,10 +2853,25 @@ class _CartPageState extends State<CartPage> {
         children: [
           Text('Proceed To Pay', style: TextStyle(color: Colors.black, fontSize: 18)),
         ],
+=======
+        title: Text('Under Construction'),
+        backgroundColor: Colors.black,
+      ),
+      body: Center(
+        child: Text(
+          'Under Construction',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.red,
+          ),
+        ),
+>>>>>>> 3428e1b8d0fcbf1d4ed023a819d86e0a1996b5c8
       ),
     );
   }
 }
+<<<<<<< HEAD
 
 
 
@@ -4135,3 +4203,5 @@ class _CartPageState extends State<CartPage> {
   String restid ="PR5Gs3rUuEvPK6HvCZcl";
 }*/
 
+=======
+>>>>>>> 3428e1b8d0fcbf1d4ed023a819d86e0a1996b5c8
