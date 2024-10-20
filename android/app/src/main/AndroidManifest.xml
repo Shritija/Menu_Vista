@@ -10,7 +10,7 @@
 
     <application
         android:label="menu_vista"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/menuvistaicon"
         android:usesCleartextTraffic="true"> <!-- Enable cleartext traffic support for UPI apps -->
 
         <activity
