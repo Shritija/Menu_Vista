@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'orderlistpage.dart';
 import 'dart:async'; // For managing timer for error message removal
@@ -35,32 +35,32 @@ class _MenuEditPageState extends State<MenuEditPage> {
     fetchMenuData();
   }
 
-  Future<void> fetchMenuData({bool preserveSelectedMealType = false}) async {
-  setState(() {
-    isLoading = true; // Start loading
-  });
-  try {
-    final restaurantQuery = await FirebaseFirestore.instance
-        .collection('restaurant')
-        .doc(widget.Rid)
-        .get();
-    if (restaurantQuery.exists) {
-      final mealTypesRef = restaurantQuery.reference.collection('menuItems').doc('MealTypes');
+ Future<void> fetchMenuData({bool preserveSelectedMealType = false}) async {
+    setState(() {
+      isLoading = true; // Start loading
+    });
+    try {
+      final restaurantQuery = await FirebaseFirestore.instance
+          .collection('restaurant')
+          .doc(widget.Rid)
+          .get();
+      if (restaurantQuery.exists) {
+        final mealTypesRef = restaurantQuery.reference.collection('menuItems').doc('MealTypes');
 
-      final mealTypes = ['breakfast', 'lunch', 'snacks', 'dinner'];
+        final mealTypes = ['breakfast', 'lunch', 'snacks', 'dinner'];
 
-      for (var mealType in mealTypes) {
-        try {
-          final mealCollectionSnapshot = await mealTypesRef.collection(mealType).get();
-          if (mealCollectionSnapshot.docs.isNotEmpty) {
+        for (var mealType in mealTypes) {
+          try {
+            final mealCollectionSnapshot = await mealTypesRef.collection(mealType).get();
+            if (mealCollectionSnapshot.docs.isNotEmpty) {
               setState(() {
-                  mealSelections[capitalize(mealType)] = true;
-                  menuData[capitalize(mealType)] = mealCollectionSnapshot.docs
-                      .map((doc) => {
+                mealSelections[capitalize(mealType)] = true;
+                menuData[capitalize(mealType)] = mealCollectionSnapshot.docs
+                    .map((doc) => {
                           'itemId': doc.id,
                           'itemname': doc['itemname'],
-                          'itemimage': doc['itemimage']?.isNotEmpty == true 
-                              ? doc['itemimage'] 
+                          'itemimage': doc['itemimage']?.isNotEmpty == true
+                              ? doc['itemimage']
                               : "https://th.bing.com/th/id/OIP.xMGhvTUooiLk2wpYCa7R1QHaHa?w=170&h=180&c=7&r=0&o=5&pid=1.7",
                           'description': doc['description'],
                           'ingredients': doc['ingredients'],
@@ -68,113 +68,44 @@ class _MenuEditPageState extends State<MenuEditPage> {
                           'small': doc['small'],
                           'medium': doc['medium'],
                           'view': doc['view'],
-                      })
-                      .where((item) {
-                          print("Item name: ${item['itemname']}, View: ${item['view']}, Veg: ${item['isveg']}");
-                          return isVeg ? item['isveg'] == true : item['isveg'] == false;
-                      })
-                      .where((item) => item['view'] == 'show')
-                      .toList();
+                        })
+                    .where((item) {
+                      print("Item name: ${item['itemname']}, View: ${item['view']}, Veg: ${item['isveg']}");
+                      return (isVeg ? item['isveg'] == true : item['isveg'] == false) &&
+                          item['view'] == 'show';
+                    })
+                    .toList();
               });
-          }
-          else {
+            } else {
+              setState(() {
+                mealSelections[capitalize(mealType)] = false;
+              });
+            }
+          } catch (e) {
+            print('Error fetching $mealType collection: $e');
             setState(() {
               mealSelections[capitalize(mealType)] = false;
             });
           }
-        } catch (e) {
-          print('Error fetching $mealType collection: $e');
-          setState(() {
-            mealSelections[capitalize(mealType)] = false;
-          });
         }
-      }
 
-      // Set the first available meal type as the default selected, only if not preserving
-      if (!preserveSelectedMealType) {
-        selectedMealType = mealSelections.entries.firstWhere((entry) => entry.value, orElse: () => MapEntry('', false)).key;
-      }
-    } else {
-      print('No document found with Rid: ${widget.Rid}');
-    }
-  } catch (e) {
-    print('Error fetching menu data: $e');
-  } finally {
-    setState(() {
-      isLoading = false; // Loading finished
-    });
-  }
-}
-
- Future<void> performSearch(String query) async {
-    setState(() {
-      searchQuery = query;
-    });
-
-    try {
-      final restaurantQuery = await FirebaseFirestore.instance
-          .collection('restaurant')
-          .doc(widget.Rid)  // Ensure we search in the correct restaurant
-          .get();
-
-      print('Searching in restaurant with Rid: ${widget.Rid}');
-      if (restaurantQuery.exists) {
-        final mealTypesRef = restaurantQuery.reference.collection('menuItems').doc('MealTypes');
-
-        // Clear current search results
-        menuData = {};
-
-        // List of meal types to search
-        final mealTypes = ['breakfast', 'lunch', 'snacks', 'dinner'];
-
-        for (var mealType in mealTypes) {
-          try {
-            final mealCollectionSnapshot = await mealTypesRef.collection(mealType)
-                .where('itemname', isGreaterThanOrEqualTo: query)
-                .where('itemname', isLessThanOrEqualTo: query + '\uf8ff')  // Perform search
-                .get();
-
-            if (mealCollectionSnapshot.docs.isNotEmpty) {
-              setState(() {
-                mealSelections[capitalize(mealType)] = true;
-                menuData[capitalize(mealType)] = mealCollectionSnapshot.docs.map((doc) {
-                  Map<String, dynamic> itemData = {
-                    'itemname': doc['itemname'],
-                    'itemimage': doc['itemimage'],
-                    'description': doc['description'],
-                    'isveg': doc['isveg'],
-                    'documentId': doc.id,
-                  };
-                  if (doc.data().containsKey('small') && doc['small'] != null) {
-                    itemData['small'] = doc['small'];
-                  }
-                  if (doc.data().containsKey('medium') && doc['medium'] != null) {
-                    itemData['medium'] = doc['medium'];
-                  }
-                  if (doc.data().containsKey('large') && doc['large'] != null) {
-                    itemData['large'] = doc['large'];
-                  }
-
-                  return itemData;
-                }).toList();
-              });
-            } else {
-              setState(() {
-                menuData[capitalize(mealType)] = [];
-              });
-            }
-          } 
-          catch (e)
-           {
-            print('Error searching $mealType collection: $e');
-          }
+        // Set the first available meal type as the default selected, only if not preserving
+        if (!preserveSelectedMealType) {
+          selectedMealType = mealSelections.entries.firstWhere((entry) => entry.value, orElse: () => MapEntry('', false)).key;
         }
+      } else {
+        print('No document found with Rid: ${widget.Rid}');
       }
     } catch (e) {
-      print('Error searching for items: $e');
+      print('Error fetching menu data: $e');
+    } finally {
+      setState(() {
+        isLoading = false; // Loading finished
+      });
     }
-    //fetchMenuData(preserveSelectedMealType: true);
   }
+
+  
 
   String capitalize(String s) => s[0].toUpperCase() + s.substring(1);
 
@@ -323,31 +254,6 @@ class _MenuEditPageState extends State<MenuEditPage> {
         child: Column(
           children: [
             // Search bar
-            TextField(
-                  onChanged: (value) {
-                    performSearch(value);  // Call the search method
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Search the item to be edited/deleted....',
-                    prefixIcon: Icon(Icons.search),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: BorderSide(
-                        color: Colors.black,
-                        width: 1.0,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: BorderSide(
-                        color: Colors.black, // Set the focused border color to black
-                        width: 2.0,
-                      ),
-                    ),
-                  ),
-                ),
             SizedBox(height: 10),
 
             // Meal category buttons using Wrap
@@ -400,7 +306,7 @@ class _MenuEditPageState extends State<MenuEditPage> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            minimumSize: Size(80, 30), 
+                            minimumSize: Size(100, 40), 
                             // Set width and height (width, height)
                     ),
                   onPressed: () {
@@ -425,66 +331,84 @@ class _MenuEditPageState extends State<MenuEditPage> {
   }
 
   Widget _buildBottomNavigationBar() {
-    return Container(
-      color: Color(0xFF1B3C3D),
-      height: 50,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          // Profile Button
-          Flexible(
-            child: IconButton(
-              iconSize: 20.0,
-              icon: Image.asset(
-                'assets/images/profileicon.png',
-              ),
-              onPressed: () {
-                Navigator.push(
+    return Container (
+        color: Color(0xFF1B3C3D),
+        height: 50,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color(0xFF1B3C3D),
+                  borderRadius: BorderRadius.circular(2),
+                  border: Border.all(
+                      color: Colors.black12, // Border color
+                      width: 1,          // Border width
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black45,
+                        offset: Offset(5, 5),
+                        blurRadius: 1.0,
+                      ),
+                    ],
+                  ),
+                padding: EdgeInsets.all(1.0),
+                child: IconButton(
+                  iconSize: 20.0, // Same smaller icon size
+                  icon: Image.asset(
+                    'assets/images/home_white.png', // Add your image path here
+                  ),
+                  onPressed: () {
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => restaurantProfilePage(documentId: widget.Rid),
+                        builder: (context) => OrderListPage(restaurantId: widget.Rid),
                       ),
                     );
-              },
-            ),
-          ),
-          // Home Button
-          Flexible(
-            child: IconButton(
-              iconSize: 20.0,
-              icon: Image.asset(
-                'assets/images/home_white.png',
+                  },
+                ),
               ),
-              onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => OrderListPage(restaurantId: widget.Rid),
+            ),
+            // Menu Button
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color(0xFF1B3C3D),
+                  borderRadius: BorderRadius.circular(2),
+                  border: Border.all(
+                      color: Colors.black12, // Border color
+                      width: 1,          // Border width
                     ),
-                  );
-              },
-            ),
-          ),
-          // Edit Menu Button
-          Flexible(
-            child: IconButton(
-              iconSize: 20.0,
-              icon: Image.asset(
-                'assets/images/edit.png',
-              ),
-              onPressed: () {
-                 Navigator.push(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black45,
+                        offset: Offset(5, 5),
+                        blurRadius: 1.0,
+                      ),
+                    ],
+                  ),
+                padding: EdgeInsets.all(1.0),
+                child: IconButton(
+                  iconSize: 20.0, // Same smaller icon size
+                  icon: Image.asset(
+                    'assets/images/edit.png', // Add your image path here
+                  ),
+                  onPressed: () {
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => MenuEditPage(Rid: widget.Rid),
                       ),
                     );
-              },
+                  },
+                ),
+              ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
   }
 
   Widget _buildMealTypeButtons(List<String> mealTypes) {

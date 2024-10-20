@@ -129,30 +129,30 @@ class _EditMenuItemPageState extends State<EditMenuItemPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Color(0xFF1B3C3D),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Center(
-          child: Image.asset(
-            'assets/images/MenuVistaicon.png',
-            height: 50,
-            width: 200,
+          automaticallyImplyLeading: false,
+          backgroundColor: Color(0xFF1B3C3D),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
           ),
-        ),
-        actions: [
-          IconButton(
-            icon: Image.asset(
-              'assets/images/topmenuicon.png',
+          title: Center(
+            child: Image.asset(
+              'assets/images/MenuVistaicon.png',
               height: 50,
-              width: 50,
+              width: 200,
             ),
-            onPressed: () {},
           ),
-        ],
-      ),
+          actions: [
+            IconButton(
+              icon: Image.asset(
+                'assets/images/topmenuicon.png',
+                height: 50,
+                width: 50,
+              ),
+              onPressed: () {},
+            ),
+          ],
+        ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -255,56 +255,83 @@ class _EditMenuItemPageState extends State<EditMenuItemPage> {
   }
 
   Widget _buildBottomNavigationBar() {
-    return Container(
-      color: Color(0xFF1B3C3D),
-      height: 50,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          Flexible(
-            child: IconButton(
-              iconSize: 20.0,
-              icon: Image.asset('assets/images/profileicon.png'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => restaurantProfilePage(documentId: widget.Rid),
+    return Container (
+        color: Color(0xFF1B3C3D),
+        height: 50,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color(0xFF1B3C3D),
+                  borderRadius: BorderRadius.circular(2),
+                  border: Border.all(
+                      color: Colors.black12, // Border color
+                      width: 1,          // Border width
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black45,
+                        offset: Offset(5, 5),
+                        blurRadius: 1.0,
+                      ),
+                    ],
                   ),
-                );
-              },
-            ),
-          ),
-          Flexible(
-            child: IconButton(
-              iconSize: 20.0,
-              icon: Image.asset('assets/images/home_white.png'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => OrderListPage(restaurantId: widget.Rid),
+                padding: EdgeInsets.all(1.0),
+                child: IconButton(
+                  iconSize: 20.0, // Same smaller icon size
+                  icon: Image.asset(
+                    'assets/images/home_white.png', // Add your image path here
                   ),
-                );
-              },
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OrderListPage(restaurantId: widget.Rid),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
-          ),
-          Flexible(
-            child: IconButton(
-              iconSize: 20.0,
-              icon: Image.asset('assets/images/edit.png'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => MenuEditPage(Rid: widget.Rid),
+            // Menu Button
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color(0xFF1B3C3D),
+                  borderRadius: BorderRadius.circular(2),
+                  border: Border.all(
+                      color: Colors.black12, // Border color
+                      width: 1,          // Border width
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black45,
+                        offset: Offset(5, 5),
+                        blurRadius: 1.0,
+                      ),
+                    ],
                   ),
-                );
-              },
+                padding: EdgeInsets.all(1.0),
+                child: IconButton(
+                  iconSize: 20.0, // Same smaller icon size
+                  icon: Image.asset(
+                    'assets/images/edit.png', // Add your image path here
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MenuEditPage(Rid: widget.Rid),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
   }
 }

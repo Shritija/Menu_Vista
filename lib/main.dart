@@ -12,6 +12,9 @@ import 'ProfilePage.dart';
 import 'RestaurantSignUpPage.dart';
 import 'ReviewPage.dart';
 import 'SignUpPage.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +40,15 @@ void main() async {
 class MenuVistaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // FirebaseMessaging.instance.requestPermission(
+    //     alert: true,
+    //     announcement: false,
+    //     badge: true,
+    //     carPlay: false,
+    //     criticalAlert: false,
+    //     provisional: false,
+    //     sound: true,
+    //   );
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: LoginPage(),

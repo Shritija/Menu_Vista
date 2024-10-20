@@ -7,7 +7,8 @@ import 'OrderHistoryPage.dart';
 import 'AboutUsPage.dart';
 import 'ProfilePage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 class CartPage extends StatefulWidget {
   final String? userId; // Accept userId as a nullable parameter
@@ -438,8 +439,13 @@ class _CartPageState extends State<CartPage> {
           var data = item.data() as Map<String, dynamic>;
           return sum + (data['price'] * data['quantity']);
         });
-
-        Navigator.push(
+        //  FirebaseMessaging.instance.getToken().then((token) {
+        //                         // Assuming you have the `orderId` accessible here, or you can save the token when the user logs in.
+        //                         FirebaseFirestore.instance.collection('orders').doc(orderId).update({
+        //                           'deviceToken': token,
+        //                         });
+        //                       });
+          Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => PaymentPage(

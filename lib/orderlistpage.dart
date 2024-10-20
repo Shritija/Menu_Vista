@@ -153,7 +153,7 @@ class _OrderListPageState extends State<OrderListPage> {
       body: StreamBuilder(
         stream: FirebaseFirestore.instance
             .collection('orders')
-            .where('orderstatus', isEqualTo: 'pending') // Fetch only pending orders
+            .where('orderstatus', isEqualTo: 'Pending') // Fetch only pending orders
             .snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (!snapshot.hasData) {
@@ -162,34 +162,61 @@ class _OrderListPageState extends State<OrderListPage> {
 
           if (snapshot.data!.docs.isEmpty) {
             // Show a message if there are no pending orders
-            return Center(child: Text("No orders yet."));
+            return Center(child: Text("No orders yet.", style: TextStyle(fontFamily: 'Oswald',
+                    fontSize: 12,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold)));
           }
 
           return ListView(
+            padding: EdgeInsets.all(8.0),
             children: snapshot.data!.docs.map((order) {
               return Card(
+                color: Color(0xFFcfd8dc),
                 child: ListTile(
-                  title: Text("Order id: ${order['orderId']}"),
+                  title: Text("Order id: ${order['orderId']}", style: TextStyle(fontFamily: 'Oswald',
+                    fontSize: 14,
+                    color: const Color.fromARGB(255, 0, 0, 0)
+                    )),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Customer Id: ${order['customerId']}"),
-                      Text("Order Type: ${order['orderType']}"),
-                      Text("Time: ${DateFormat('hh:mm a, dd MMM yyyy').format(order['time'].toDate())}"),
+                      Text("Customer Id: ${order['customerId']}", style: TextStyle(fontFamily: 'Oswald',
+                    fontSize: 14,
+                    color: const Color.fromARGB(255, 0, 0, 0))),
+                      Text("Order Type: ${order['orderType']}", style: TextStyle(fontFamily: 'Oswald',
+                    fontSize: 14,
+                    color: const Color.fromARGB(255, 0, 0, 0))),
+                      Text("Time: ${DateFormat('hh:mm a, dd MMM yyyy').format(order['timestamp'].toDate())}", style: TextStyle(fontFamily: 'Oswald',
+                    fontSize: 14,
+                    color: const Color.fromARGB(255, 0, 0, 0))),
+                    SizedBox(height: 5),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            elevation: 3,
+                            backgroundColor: Color(0xFF1B3C3D), // Dark green color
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            minimumSize: Size(80, 30), 
+                            // Set width and height (width, height)
+                       ),
+                       onPressed: () {
+                        // Use the document ID directly
+                        String orderId = order.id;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => orderDetailsPage(orderId, widget.restaurantId),
+                          ),
+                        );
+                      },
+                      child: Text("View Order", style: TextStyle(fontFamily: 'Oswald',
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold)),
+                      ),
                     ],
-                  ),
-                  trailing: ElevatedButton(
-                    onPressed: () {
-                      // Use the document ID directly
-                      String orderId = order.id;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => orderDetailsPage(orderId, widget.restaurantId),
-                        ),
-                      );
-                    },
-                    child: Text("View Order"),
                   ),
                 ),
               );
@@ -203,50 +230,24 @@ class _OrderListPageState extends State<OrderListPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            // Profile Button
-            Flexible(
+            Expanded(
               child: Container(
                 decoration: BoxDecoration(
                   color: Color(0xFF1B3C3D),
                   borderRadius: BorderRadius.circular(2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black45,
-                      offset: Offset(1, 1), // Smaller shadow
-                      blurRadius: 1.0,
+                  border: Border.all(
+                      color: Colors.black12, // Border color
+                      width: 1,          // Border width
                     ),
-                  ],
-                ),
-                child: IconButton(
-                  iconSize: 20.0, // Smaller icon size to fit better
-                  icon: Image.asset(
-                    'assets/images/profileicon.png', // Add your image path here
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => restaurantProfilePage(documentId: widget.restaurantId),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black45,
+                        offset: Offset(5, 5),
+                        blurRadius: 1.0,
                       ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            // Shopping Cart Button
-            Flexible(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFF1B3C3D),
-                  borderRadius: BorderRadius.circular(2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black45,
-                      offset: Offset(1, 1),
-                      blurRadius: 1.0,
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                padding: EdgeInsets.all(1.0),
                 child: IconButton(
                   iconSize: 20.0, // Same smaller icon size
                   icon: Image.asset(
@@ -264,19 +265,24 @@ class _OrderListPageState extends State<OrderListPage> {
               ),
             ),
             // Menu Button
-            Flexible(
+            Expanded(
               child: Container(
                 decoration: BoxDecoration(
                   color: Color(0xFF1B3C3D),
                   borderRadius: BorderRadius.circular(2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black45,
-                      offset: Offset(1, 1),
-                      blurRadius: 1.0,
+                  border: Border.all(
+                      color: Colors.black12, // Border color
+                      width: 1,          // Border width
                     ),
-                  ],
-                ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black45,
+                        offset: Offset(5, 5),
+                        blurRadius: 1.0,
+                      ),
+                    ],
+                  ),
+                padding: EdgeInsets.all(1.0),
                 child: IconButton(
                   iconSize: 20.0, // Same smaller icon size
                   icon: Image.asset(
