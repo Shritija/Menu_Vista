@@ -6,9 +6,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 
 class OrderHistoryPage extends StatelessWidget {
   final String? documentId;
-
   OrderHistoryPage({required this.documentId});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
